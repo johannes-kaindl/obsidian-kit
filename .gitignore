@@ -1,0 +1,9 @@
+# Tooling / Session-State (kein Teil des Kit-Repos)
+.remember/
+
+# Dependency- / Build-Artefakte
+node_modules/
+*.tsbuildinfo
+
+# OS
+.DS_Store
