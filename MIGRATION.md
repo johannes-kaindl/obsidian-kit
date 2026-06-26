@@ -24,6 +24,15 @@ Voraussetzung: git-Dependency gepinnt (`"obsidian-kit": "git+https://codeberg.or
 1. vault-rag: `src/endpoint.ts` löschen, Importe auf `obsidian-kit/pure` umbiegen.
 2. image-to-markdown: die inline-Variante in `src/vision_client.ts` durch `import { normalizeEndpoint } from "obsidian-kit/pure"` ersetzen.
 
+## `resolveActiveEndpoint` (ab Kit 0.2.0)
+
+Geordnete Endpoint-Fallback-Liste — erster erreichbarer gewinnt; `ping` injiziert.
+
+- **image-to-markdown (Migration, n=1 → entdoppeln):** die lokale `resolveActiveEndpoint`-Definition in `src/vision_client.ts` **löschen**, stattdessen `import { resolveActiveEndpoint, normalizeEndpoint } from "obsidian-kit/pure"`. Re-exportieren, falls `main.ts`/`settings.ts` sie aus `./vision_client` beziehen. **Keine** Verhaltensänderung: weiterhin single-call mit injiziertem `ping`; die Failover-Orchestrierung (`activeEndpoint`-Cache, Re-Resolve bei Refresh/Tab-Open, EIN Retry nach Fehlschlag) bleibt **lokal in `main.ts`**.
+- **vault-rag (Adoption — der eigentliche Gewinn):** vault-rag hat das Feature **noch nicht**. Das Settings-Feld von `string` (ein Endpoint) auf `string[]` (Liste) erweitern (mit `migrate`-Helfer wie in img-to-md), und am „Verbindungs"-Moment `resolveActiveEndpoint(endpoints, ep => pingEndpoint(ep))` aufrufen, statt den festen Endpoint zu nehmen. So bekommt vault-rag die netzwechsel-robuste Endpoint-Wahl gratis aus dem Kit.
+
+> Die Settings-UI-Mechanik (Endpoint-Liste editieren, migrieren) bleibt **plugin-lokal** — nur die generische Resolver-Funktion kommt aus dem Kit.
+
 ## `clampInt`
 
 1. Lokale `clampInt`-Definition bzw. Inline-`Math.min(max, Math.max(min, …))`-Stellen durch `import { clampInt } from "obsidian-kit/pure"` ersetzen.

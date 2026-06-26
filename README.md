@@ -12,7 +12,7 @@ Drei Subpfade, über die `exports`-Map auf **rohe `.ts`** (kein Build-Schritt):
 
 | Subpfad | Inhalt | Reinheit |
 |---|---|---|
-| `obsidian-kit/pure` | `ThinkSplitter`, `parseSSE`, `normalizeEndpoint`, `clampInt`, i18n-Engine, `KIT_VERSION` | **kein** obsidian-Import (Node-testbar, PROF-OBS-03/04) — per eslint erzwungen |
+| `obsidian-kit/pure` | `ThinkSplitter`, `parseSSE`, `normalizeEndpoint`, `resolveActiveEndpoint`, `clampInt`, i18n-Engine, `KIT_VERSION` | **kein** obsidian-Import (Node-testbar, PROF-OBS-03/04) — per eslint erzwungen |
 | `obsidian-kit/testing` | `createObsidianMock()` + alle Stubs (Obsidian-Test-Double) | nur im Test-Pfad, **nie** ins `main.js` gebündelt |
 | `obsidian-kit/obsidian` | *(reserviert, v0.1.0 leer)* — obsidian-gekoppelte Helfer | darf obsidian importieren |
 
@@ -50,6 +50,7 @@ export * from "obsidian-kit/testing";
 | `ThinkSplitter` | `push(text) → {content, reasoning}` · `flush() → {content, reasoning}` | — |
 | `parseSSE` | `parseSSE(buffer) → {content[], reasoning[], model?, rest, done}` | PROF-OBS-12 |
 | `normalizeEndpoint` | `normalizeEndpoint(s) → string` | — |
+| `resolveActiveEndpoint` | `resolveActiveEndpoint(endpoints, ping) → Promise<string\|null>` | — |
 | `clampInt` | `clampInt(value: string\|number, min, max, fallback) → number` | — |
 | i18n | `pickLang` · `setLang` · `getLang` · `defineStrings({en,de})` · `t(key, ...args)` | **PROF-OBS-07** |
 | `createObsidianMock` | `createObsidianMock(overrides?) → MockStubs` | PROF-OBS-08 |
