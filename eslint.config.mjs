@@ -20,4 +20,21 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Test-Fixture: ein Obsidian-Double ist inhärent lose typisiert (es bildet eine
+    // any-lastige Runtime-API nach). Diese type-checked-Regeln sind hier untauglich;
+    // file-scoped gelockert (PROF-OBS-08 erlaubt das mit Begründung, statt Inline-disables).
+    files: ["src/testing/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
+  },
 );
