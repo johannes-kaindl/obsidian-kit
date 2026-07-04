@@ -48,9 +48,10 @@ export * from "obsidian-kit/testing";
 | Modul | Signatur | Kodifiziert |
 |---|---|---|
 | `ThinkSplitter` | `push(text) → {content, reasoning}` · `flush() → {content, reasoning}` | — |
-| `parseSSE` | `parseSSE(buffer) → {content[], reasoning[], model?, rest, done}` | PROF-OBS-12 |
+| `parseSSE` | `parseSSE(buffer) → {content[], reasoning[], model?, finishReason?, rest, done}` | PROF-OBS-12 |
 | `normalizeEndpoint` | `normalizeEndpoint(s) → string` | — |
 | `resolveActiveEndpoint` | `resolveActiveEndpoint(endpoints, ping) → Promise<string\|null>` | — |
+| `parseEndpointList` | `parseEndpointList(text) → string[]` (Textarea → geordnete, getrimmte, deduplizierte Liste) | — |
 | `clampInt` | `clampInt(value: string\|number, min, max, fallback) → number` | — |
 | i18n | `pickLang` · `setLang` · `getLang` · `defineStrings({en,de})` · `t(key, ...args)` | **PROF-OBS-07** |
 | `createObsidianMock` | `createObsidianMock(overrides?) → MockStubs` | PROF-OBS-08 |
