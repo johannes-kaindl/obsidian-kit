@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeEndpoint, resolveActiveEndpoint } from "../src/pure/endpoint";
+import { normalizeEndpoint, resolveActiveEndpoint, parseEndpointList } from "../src/pure/endpoint";
 
 describe("normalizeEndpoint", () => {
   it("lässt einen blanken Host unverändert", () => {
@@ -65,5 +65,23 @@ describe("resolveActiveEndpoint", () => {
       ep => { seen.push(ep); return Promise.resolve(true); },
     );
     expect(seen).toEqual(["http://a:1"]);
+  });
+});
+
+describe("parseEndpointList", () => {
+  it("splittet Zeilen und trimmt Einträge", () => {
+    expect(parseEndpointList("http://a:1\n  http://b:2  ")).toEqual(["http://a:1", "http://b:2"]);
+  });
+  it("verarbeitet \\r\\n-Zeilenenden", () => {
+    expect(parseEndpointList("http://a:1\r\nhttp://b:2")).toEqual(["http://a:1", "http://b:2"]);
+  });
+  it("dedupliziert unter Erhalt der Reihenfolge", () => {
+    expect(parseEndpointList("http://a:1\nhttp://b:2\nhttp://a:1")).toEqual(["http://a:1", "http://b:2"]);
+  });
+  it("überspringt leere und Whitespace-Zeilen", () => {
+    expect(parseEndpointList("\nhttp://a:1\n   \n")).toEqual(["http://a:1"]);
+  });
+  it("gibt bei leerem String eine leere Liste zurück", () => {
+    expect(parseEndpointList("")).toEqual([]);
   });
 });

@@ -34,3 +34,18 @@ export async function resolveActiveEndpoint(
   }
   return null;
 }
+
+/** Parst die Settings-Textarea (ein Endpoint pro Zeile) in eine geordnete, getrimmte,
+ *  deduplizierte, leerzeilen-freie Liste für `resolveActiveEndpoint`.
+ *  Bewusst OHNE Normalisierung: `resolveActiveEndpoint` normalisiert selbst pro Eintrag,
+ *  und die Settings-Anzeige bleibt roundtrip-treu (der Nutzer sieht seine Roheingabe).
+ *
+ *  @example parseEndpointList("http://a:1\n http://b:2 \n\nhttp://a:1") // → ["http://a:1", "http://b:2"] */
+export function parseEndpointList(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of text.split(/\r\n|\n|\r/)) {
+    const v = raw.trim();
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
+}

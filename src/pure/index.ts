@@ -1,6 +1,6 @@
 export { ThinkSplitter } from "./think-splitter";
 export { parseSSE } from "./sse";
-export { normalizeEndpoint, resolveActiveEndpoint } from "./endpoint";
+export { normalizeEndpoint, resolveActiveEndpoint, parseEndpointList } from "./endpoint";
 export { clampInt } from "./num";
 export { type Lang, pickLang, setLang, getLang, defineStrings, t } from "./i18n";
 
