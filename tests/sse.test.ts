@@ -38,4 +38,18 @@ describe("parseSSE", () => {
   it("model ist undefined ohne model-Feld", () => {
     expect(parseSSE('data: {"choices":[{"delta":{"content":"a"}}]}\n').model).toBeUndefined();
   });
+  it("extrahiert finishReason aus finish_reason", () => {
+    const r = parseSSE('data: {"choices":[{"delta":{"content":"a"},"finish_reason":null}]}\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n');
+    expect(r.finishReason).toBe("stop");
+  });
+  it("finishReason ist undefined ohne finish_reason-Feld", () => {
+    expect(parseSSE('data: {"choices":[{"delta":{"content":"a"}}]}\n').finishReason).toBeUndefined();
+  });
+  it("finish_reason null in Zwischen-Chunks wird ignoriert", () => {
+    expect(parseSSE('data: {"choices":[{"delta":{"content":"a"},"finish_reason":null}]}\n').finishReason).toBeUndefined();
+  });
+  it("erstes non-null finish_reason gewinnt", () => {
+    const r = parseSSE('data: {"choices":[{"delta":{},"finish_reason":"length"}]}\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n');
+    expect(r.finishReason).toBe("length");
+  });
 });
