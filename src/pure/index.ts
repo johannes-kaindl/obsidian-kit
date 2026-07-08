@@ -4,10 +4,12 @@ export { normalizeEndpoint, resolveActiveEndpoint, parseEndpointList } from "./e
 export {
   type EndpointStatusKind, type EndpointStatus, type ProbeInput,
   classifyEndpointStatus,
+  type EndpointPreset, ENDPOINT_PRESETS,
+  type EndpointWarning, validateEndpointInput,
 } from "./endpoint_diagnostics";
 export { clampInt } from "./num";
 export { mergeSettings } from "./settings";
 export { type Lang, pickLang, setLang, getLang, defineStrings, t } from "./i18n";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
-export const KIT_VERSION = "0.4.0";
+export const KIT_VERSION = "0.5.0";

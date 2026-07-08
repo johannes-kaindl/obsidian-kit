@@ -52,3 +52,48 @@ export function classifyEndpointStatus(input: ProbeInput): EndpointStatus {
   }
   return { reachable: false, kind: "unknown", klartext: `Nicht erreichbar — ${m}`, raw: m };
 }
+
+export interface EndpointPreset { label: string; url: string; }
+
+/** Benannte Ein-Klick-Presets für den Endpunkt-Editor. Base-URLs ohne /v1
+ *  (normalizeEndpoint strippt es ohnehin). */
+export const ENDPOINT_PRESETS: EndpointPreset[] = [
+  { label: "LM Studio", url: "http://localhost:1234" },
+  { label: "Ollama", url: "http://localhost:11434" },
+];
+
+export interface EndpointWarning { rule: string; message: string; }
+
+const PLACEHOLDER_IP = [/^192\.0\.2\./, /^198\.51\.100\./, /^203\.0\.113\./];
+
+/** Nicht-blockierende Eingabe-Prüfung: gibt Hinweise, blockiert nie.
+ *  Bewusst OHNE Reachability-Raten und OHNE "falsches Subnetz" (das ist der legitime
+ *  LAN-Fallback-Fall). */
+export function validateEndpointInput(url: string): EndpointWarning[] {
+  const warnings: EndpointWarning[] = [];
+  const v = url.trim();
+  if (!v) return warnings;
+  if (!/^https?:\/\//i.test(v)) {
+    warnings.push({ rule: "scheme", message: "Adresse braucht http:// oder https://" });
+    return warnings;   // ohne Schema lässt sich Host/Port nicht sinnvoll parsen
+  }
+  let host = "";
+  let port = "";
+  try {
+    const u = new URL(v);
+    host = u.hostname;
+    port = u.port;
+  } catch {
+    warnings.push({ rule: "malformed", message: "Adresse ist keine gültige URL" });
+    return warnings;
+  }
+  const isHttp = /^http:\/\//i.test(v);
+  const isLocalOrIp = host === "localhost" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+  if (isHttp && isLocalOrIp && !port) {
+    warnings.push({ rule: "port", message: "Lokale LLM-Server brauchen fast immer einen Port (z. B. :1234)" });
+  }
+  if (host === "0.0.0.0" || PLACEHOLDER_IP.some(re => re.test(host))) {
+    warnings.push({ rule: "placeholder-ip", message: "Sieht aus wie eine Beispiel-/Platzhalter-Adresse" });
+  }
+  return warnings;
+}
