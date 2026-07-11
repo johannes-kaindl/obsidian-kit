@@ -18,14 +18,14 @@ describe('layoutDocument — code', () => {
     const doc: Block[] = [{ type: 'code', text: 'x' }];
     const r = layoutDocument(doc, opts());
     const rectIdx = r.ops.findIndex(o => o.kind === 'rect');
-    const textIdx = r.ops.findIndex(o => o.kind === 'text' && (o as any).str === 'x');
+    const textIdx = r.ops.findIndex((o): o is Extract<DrawOp, { kind: 'text' }> => o.kind === 'text' && o.str === 'x');
     expect(rectIdx).toBeLessThan(textIdx);
   });
   it('hard-wraps overlong code lines', () => {
     const long = 'x'.repeat(400);
     const doc: Block[] = [{ type: 'code', text: long }];
     const r = layoutDocument(doc, opts());
-    const codeTexts = r.ops.filter(o => o.kind === 'text' && (o as any).str.startsWith('x'));
+    const codeTexts = r.ops.filter((o): o is Extract<DrawOp, { kind: 'text' }> => o.kind === 'text' && o.str.startsWith('x'));
     expect(codeTexts.length).toBeGreaterThan(1);
   });
 });

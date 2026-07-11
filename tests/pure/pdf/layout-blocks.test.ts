@@ -5,7 +5,8 @@ import { DEFAULT_OPTIONS } from '../../../src/pure/pdf/options';
 import { Block } from '../../../src/pure/pdf/ir';
 
 const opts = () => JSON.parse(JSON.stringify(DEFAULT_OPTIONS)) as typeof DEFAULT_OPTIONS;
-const texts = (r: { ops: DrawOp[] }) => r.ops.filter(o => o.kind === 'text').map(o => (o as any).str);
+const isText = (o: DrawOp): o is Extract<DrawOp, { kind: 'text' }> => o.kind === 'text';
+const texts = (r: { ops: DrawOp[] }) => r.ops.filter(isText).map(o => o.str);
 
 describe('layoutDocument — lists/quote/hr', () => {
   it('renders a bullet marker for unordered lists', () => {
@@ -27,9 +28,11 @@ describe('layoutDocument — lists/quote/hr', () => {
       ] },
     ] }];
     const r = layoutDocument(doc, opts());
-    const top = r.ops.find(o => o.kind === 'text' && (o as any).str.includes('top')) as any;
-    const child = r.ops.find(o => o.kind === 'text' && (o as any).str.includes('child')) as any;
-    expect(child.x).toBeGreaterThan(top.x);
+    const top = r.ops.find((o): o is Extract<DrawOp, { kind: 'text' }> => o.kind === 'text' && o.str.includes('top'));
+    const child = r.ops.find((o): o is Extract<DrawOp, { kind: 'text' }> => o.kind === 'text' && o.str.includes('child'));
+    expect(top).toBeDefined();
+    expect(child).toBeDefined();
+    expect(child!.x).toBeGreaterThan(top!.x);
   });
   it('draws a horizontal rule as a line op', () => {
     const doc: Block[] = [{ type: 'hr' }];
