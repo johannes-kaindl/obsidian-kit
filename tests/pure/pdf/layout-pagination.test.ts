@@ -28,4 +28,19 @@ describe('pagination — pagebreak + keep-together', () => {
     const r = layoutDocument([{ type: 'image', data: new Uint8Array([1]), wPx: 100, hPx: 50 }], o);
     expect(r.ops.some(op => op.kind === 'image')).toBe(true);
   });
+  it('keeps a heading with the next lines: a heading near page-end moves to the next page with its content', () => {
+    const doc: Block[] = [...fill(30), { type: 'heading', level: 2, inlines: [{ text: 'Abschnitt' }] }, { type: 'paragraph', inlines: [{ text: 'Folgeabsatz mit genug Text um mehrere Zeilen zu erzeugen '.repeat(3) }] }];
+    const r = layoutDocument(doc, opts());
+    const h = r.ops.find((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str === 'Abschnitt')!;
+    const para = r.ops.filter((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str.startsWith('Folgeabsatz'));
+    // heading and the first line of its following paragraph share a page (no orphan heading)
+    expect(para.length).toBeGreaterThan(0);
+    expect(h.page).toBe(para[0].page);
+  });
+  it('headingKeepWithLines 0 → heading may sit at the very bottom (old behaviour)', () => {
+    const o = opts(); o.pagination.headingKeepWithLines = 0;
+    const doc: Block[] = [...fill(3), { type: 'heading', level: 2, inlines: [{ text: 'X' }] }];
+    const r = layoutDocument(doc, o);
+    expect(r.ops.some(op => op.kind === 'text' && op.str === 'X')).toBe(true);
+  });
 });

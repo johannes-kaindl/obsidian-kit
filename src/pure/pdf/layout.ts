@@ -163,10 +163,31 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     return natural.map((w) => (w / sum) * contentWidthPt);
   };
 
-  const renderBlock = (b: Block) => {
+  // Height of the first n wrapped lines of a block — a lookahead heuristic used to decide
+  // whether a heading would be orphaned at the bottom of a page. For text-bearing blocks
+  // (paragraph/heading) this wraps exactly like the renderer does; other block types use a
+  // simple `n * baseSize*lineH` proxy since splitting them mid-block is a separate concern.
+  const measureFirstLines = (b: Block, n: number): number => {
+    if (n <= 0) return 0;
+    if (b.type === 'paragraph' || b.type === 'heading') {
+      const sz = b.type === 'heading' ? baseSize * (HEADING_MUL[b.level] || 1) * hScale : baseSize;
+      const runs: WrapRun[] = (b.inlines.length ? b.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: runFont(r) }));
+      const lines = wrapRuns(runs, contentWidthPt, sz);
+      return Math.min(n, lines.length) * sz * lineH;
+    }
+    return n * baseSize * lineH;
+  };
+
+  const renderBlock = (b: Block, next?: Block) => {
     switch (b.type) {
       case 'heading': {
         const sz = baseSize * (HEADING_MUL[b.level] || 1) * hScale;
+        const runs: WrapRun[] = (b.inlines.length ? b.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: F.bold }));
+        const headingLines = wrapRuns(runs, contentWidthPt, sz).length;
+        const headH = sz * 0.55 + headingLines * sz * lineH;
+        if (PAG.headingKeepWithLines > 0 && next) {
+          breakBeforeIfNeeded(headH + measureFirstLines(next, PAG.headingKeepWithLines));
+        }
         y -= sz * 0.55; // space above heading scales with its size (groups toward following content)
         emitInlines(b.inlines, sz, () => F.bold, TEXT, baseSize * 0.28, 0);
         break;
@@ -307,7 +328,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     emitInlines([{ text: options.frame.title }], sz, () => F.bold, TEXT, baseSize * 0.7, 0);
   }
 
-  for (const b of doc) renderBlock(b);
+  for (let i = 0; i < doc.length; i++) renderBlock(doc[i], doc[i + 1]);
 
   // Page numbers (footer, centred) — drawn after content so pageCount is known.
   if (options.frame.pageNumbers) {
