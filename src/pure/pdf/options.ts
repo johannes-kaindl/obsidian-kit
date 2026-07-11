@@ -19,7 +19,7 @@ export interface PaginationOptions {
 }
 
 export interface LayoutOptions {
-  page: { size: 'A4' | 'Letter'; marginMm: Margins };
+  page: { size: 'A4' | 'Letter'; marginMm: Margins; startY?: number; followTopMm?: number };
   fonts: { body: FontChoice; baseSizePt: number; lineHeight: number; headingScale: number };
   colors: { text: string; muted: string; rule: string; codeBg: string; tableBorder: string };
   frame: { title: string | null; pageNumbers: boolean; runningHeaderFooter: RunningHF | null };

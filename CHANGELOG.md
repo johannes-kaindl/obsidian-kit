@@ -2,6 +2,16 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.11.0 — pdf: layoutDocument komponierbar (Start-/Folgeseiten-Cursor)
+
+### `obsidian-kit/pure/pdf`
+- **`LayoutOptions.page.startY`** (optional) — initiale Baseline-Y (PDF-pt) auf Seite 0; ohne Angabe unverändert `topYFirst - ASCENT*baseSize` (alte Semantik).
+- **`LayoutOptions.page.followTopMm`** (optional) — Top-Kante (mm von oben) für Seite ≥1; ohne Angabe unverändert `marginMm.top`.
+- **`LayoutResult.endPage`/`endY`** — Cursor-Position nach dem letzten Block (nächste freie Baseline), damit ein Aufrufer weitere Inhalte nahtlos anschließen kann.
+- Rein additiv: ohne die neuen Felder ist die Ausgabe byte-identisch zu 0.10.1; `renderPdf` ignoriert die neuen Felder unverändert.
+
+Consumer: **`obsidian-letterhead`** (Brief-Body eingebettet in eine Seite mit vorhandenem Kopf).
+
 ## 0.9.0 — pdf: metadata block + pagination + heading scale
 
 ### `obsidian-kit/pure/pdf`
