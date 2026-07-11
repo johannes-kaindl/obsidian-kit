@@ -19,4 +19,4 @@ export {
 } from "./pdf";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
-export const KIT_VERSION = "0.9.0";
+export const KIT_VERSION = "0.10.0";
