@@ -1,8 +1,8 @@
 // src/pure/pdf/layout.ts
-import { PT_PER_MM, mmToPt, pageSizePt, hexToRgb01 } from './geometry';
+import { mmToPt, pageSizePt, hexToRgb01 } from './geometry';
 import { textWidthPt } from './metrics';
 import { wrapRuns, WrapRun } from './wrap';
-import { Block, Inline, inlineText } from './ir';
+import { Block, Inline } from './ir';
 import { LayoutOptions, fontSet } from './options';
 
 export type DrawOp =

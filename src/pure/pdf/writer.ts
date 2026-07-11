@@ -69,7 +69,7 @@ export class PdfWriter {
     for (const fk of fontKeys) fontObjNo[fk] = nextNo++;
     for (const j of this.jpegs) jpegObjNo[j.name] = nextNo++;
 
-    const objs: number[][] = new Array(nextNo - 1);
+    const objs: number[][] = new Array<number[]>(nextNo - 1);
     const set = (no: number, bytes: number[]) => { objs[no - 1] = bytes; };
 
     set(catalogNo, strBytes(`${catalogNo} 0 obj\n<< /Type /Catalog /Pages ${pagesNo} 0 R >>\nendobj\n`));
