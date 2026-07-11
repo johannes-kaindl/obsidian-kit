@@ -31,6 +31,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   const TEXT = hexToRgb01(options.colors.text);
   const MUTED = hexToRgb01(options.colors.muted);
   const RULE = hexToRgb01(options.colors.rule);
+  const CODEBG = hexToRgb01(options.colors.codeBg);
 
   const ops: DrawOp[] = [];
   let page = 0;
@@ -104,6 +105,16 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     for (const [p, r] of byPage) ops.push({ page: p, kind: 'line', x1: barX, y1: r.bot, x2: barX, y2: r.top, wPt: 1.5, rgb: MUTED });
   };
 
+  // Hard-wrap a mono line to the content width by character count.
+  const wrapMono = (line: string, sz: number, maxWidthPt: number): string[] => {
+    const charW = textWidthPt(F.mono, sz, 'M'); // Courier is fixed-width
+    const maxChars = Math.max(1, Math.floor(maxWidthPt / charW));
+    if (line.length <= maxChars) return [line];
+    const out: string[] = [];
+    for (let i = 0; i < line.length; i += maxChars) out.push(line.slice(i, i + maxChars));
+    return out;
+  };
+
   const renderBlock = (b: Block) => {
     switch (b.type) {
       case 'heading': {
@@ -133,6 +144,24 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         const yy = advance(baseSize * lineH);
         const midY = yy + ASCENT * baseSize * 0.4;
         ops.push({ page, kind: 'line', x1: leftPt, y1: midY, x2: rightEdge, y2: midY, wPt: 0.5, rgb: RULE });
+        break;
+      }
+      case 'code': {
+        const sz = baseSize - 1;
+        const padPt = mmToPt(2);
+        const innerWidth = contentWidthPt - 2 * padPt;
+        const rawLines = b.text.replace(/\n$/, '').split('\n');
+        const wrapped: string[] = [];
+        for (const ln of rawLines) wrapped.push(...wrapMono(ln, sz, innerWidth));
+        y -= baseSize * 0.2;
+        for (const ln of wrapped) {
+          const lineHeightPt = sz * 1.35;
+          // Reserve the line, then paint the background rect behind it (before) and the text (after) — PDF paints in stream order.
+          const yy = advance(lineHeightPt);
+          ops.push({ page, kind: 'rect', x: leftPt, y: yy - (lineHeightPt - ASCENT * sz), w: contentWidthPt, h: lineHeightPt, rgb: CODEBG });
+          T(leftPt + padPt, yy, ln, F.mono, sz, TEXT);
+        }
+        y -= baseSize * 0.6;
         break;
       }
       case 'unsupported':
