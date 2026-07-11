@@ -10,12 +10,21 @@ export interface RunningHF {
   right?: string;
 }
 
+export interface PaginationOptions {
+  keepTablesTogether: boolean;
+  repeatTableHeader: boolean;
+  keepImagesTogether: boolean;
+  keepCodeTogether: boolean;
+  headingKeepWithLines: number; // 0 = off
+}
+
 export interface LayoutOptions {
   page: { size: 'A4' | 'Letter'; marginMm: Margins };
   fonts: { body: FontChoice; baseSizePt: number; lineHeight: number; headingScale: number };
   colors: { text: string; muted: string; rule: string; codeBg: string; tableBorder: string };
   frame: { title: string | null; pageNumbers: boolean; runningHeaderFooter: RunningHF | null };
   image: { maxWidthPct: number };
+  pagination: PaginationOptions;
 }
 
 export const DEFAULT_OPTIONS: LayoutOptions = {
@@ -24,6 +33,7 @@ export const DEFAULT_OPTIONS: LayoutOptions = {
   colors: { text: '#1a1a1a', muted: '#666666', rule: '#cccccc', codeBg: '#f4f4f4', tableBorder: '#cccccc' },
   frame: { title: null, pageNumbers: true, runningHeaderFooter: null },
   image: { maxWidthPct: 100 },
+  pagination: { keepTablesTogether: true, repeatTableHeader: true, keepImagesTogether: true, keepCodeTogether: true, headingKeepWithLines: 2 },
 };
 
 // Map a font family choice to the four Core-14 font keys plus the mono key.

@@ -53,6 +53,20 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     const yy = y; y -= h; return yy;
   };
 
+  const PAG = options.pagination;
+
+  // Usable content height of a single page.
+  const pageContentHeight = topYFirst - bottomY;
+  // Would a block of height h fit at the current cursor position?
+  const fitsHere = (h: number): boolean => (y - h) >= bottomY;
+  // Force a page break: advance to the top of a fresh page.
+  const forceBreak = () => { page += 1; y = topYFirst - ASCENT * baseSize; };
+  // Break before the current block if it doesn't fit here but does fit on a fresh page
+  // (a block taller than a full page must split instead — leave it alone).
+  const breakBeforeIfNeeded = (h: number) => {
+    if (!fitsHere(h) && h <= pageContentHeight) forceBreak();
+  };
+
   // Resolve an inline run to a font key for the given base set.
   const runFont = (r: Inline): string => {
     if (r.code) return F.mono;
@@ -121,6 +135,17 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     return out;
   };
 
+  // Total rendered height of a code block — mirrors the 'code' case's math exactly (no drift).
+  const measureCode = (text: string): number => {
+    const sz = baseSize - 1;
+    const padPt = mmToPt(2);
+    const innerWidth = contentWidthPt - 2 * padPt;
+    const rawLines = text.replace(/\n$/, '').split('\n');
+    let lineCount = 0;
+    for (const ln of rawLines) lineCount += wrapMono(ln, sz, innerWidth).length;
+    return baseSize * 0.2 + lineCount * sz * 1.35 + baseSize * 0.6;
+  };
+
   // Compute column widths: proportional to each column's longest cell text, capped to content width.
   const columnWidths = (header: { inlines: Inline[] }[], rows: { inlines: Inline[] }[][], sz: number): number[] => {
     const cols = header.length || (rows[0] ? rows[0].length : 0);
@@ -170,6 +195,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         break;
       }
       case 'code': {
+        if (PAG.keepCodeTogether) breakBeforeIfNeeded(measureCode(b.text));
         const sz = baseSize - 1;
         const padPt = mmToPt(2);
         const innerWidth = contentWidthPt - 2 * padPt;
@@ -261,12 +287,16 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         let hPt = wPt * ratio;
         const maxH = (topYFirst - bottomY) * 0.9;
         if (hPt > maxH) { hPt = maxH; wPt = hPt / ratio; }
+        if (PAG.keepImagesTogether) breakBeforeIfNeeded(hPt + baseSize * 0.6);
         // Reserve the image height (page-break if needed) and place from the top of the slot.
         const yTop = advance(hPt + baseSize * 0.6);
         const imgBottom = yTop + ASCENT * baseSize - hPt;
         ops.push({ page, kind: 'image', data: b.data, wPx: b.wPx, hPx: b.hPx, x: leftPt, y: imgBottom, w: wPt, h: hPt });
         break;
       }
+      case 'pagebreak':
+        forceBreak();
+        break;
       default:
         break; // other block types added in later tasks
     }

@@ -30,7 +30,8 @@ export type Block =
   | { type: 'image'; data: Uint8Array; wPx: number; hPx: number; alt?: string }
   | { type: 'hr' }
   | { type: 'metadata'; entries: { key: string; value: string }[] }
-  | { type: 'unsupported'; text: string };
+  | { type: 'unsupported'; text: string }
+  | { type: 'pagebreak' };
 
 export type Document = Block[];
 
