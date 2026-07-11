@@ -2,7 +2,7 @@
 import { mmToPt, pageSizePt, hexToRgb01 } from './geometry';
 import { textWidthPt } from './metrics';
 import { wrapRuns, WrapRun } from './wrap';
-import { Block, Inline } from './ir';
+import { Block, Inline, inlineText } from './ir';
 import { LayoutOptions, fontSet } from './options';
 
 export type DrawOp =
@@ -32,6 +32,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   const MUTED = hexToRgb01(options.colors.muted);
   const RULE = hexToRgb01(options.colors.rule);
   const CODEBG = hexToRgb01(options.colors.codeBg);
+  const TBORDER = hexToRgb01(options.colors.tableBorder);
 
   const ops: DrawOp[] = [];
   let page = 0;
@@ -115,6 +116,23 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     return out;
   };
 
+  // Compute column widths: proportional to each column's longest cell text, capped to content width.
+  const columnWidths = (header: { inlines: Inline[] }[], rows: { inlines: Inline[] }[][], sz: number): number[] => {
+    const cols = header.length || (rows[0] ? rows[0].length : 0);
+    if (cols === 0) return [];
+    const natural: number[] = new Array<number>(cols).fill(mmToPt(12));
+    const measure = (cells: { inlines: Inline[] }[]) => {
+      for (let c = 0; c < cols; c++) {
+        const txt = inlineText((cells[c] || { inlines: [] }).inlines);
+        natural[c] = Math.max(natural[c], textWidthPt(F.body, sz, txt) + mmToPt(4));
+      }
+    };
+    measure(header);
+    for (const r of rows) measure(r);
+    const sum = natural.reduce((a, b) => a + b, 0) || 1;
+    return natural.map((w) => (w / sum) * contentWidthPt);
+  };
+
   const renderBlock = (b: Block) => {
     switch (b.type) {
       case 'heading': {
@@ -161,6 +179,46 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
           ops.push({ page, kind: 'rect', x: leftPt, y: yy - (lineHeightPt - ASCENT * sz), w: contentWidthPt, h: lineHeightPt, rgb: CODEBG });
           T(leftPt + padPt, yy, ln, F.mono, sz, TEXT);
         }
+        y -= baseSize * 0.6;
+        break;
+      }
+      case 'table': {
+        const sz = baseSize - 1;
+        const cols = columnWidths(b.header, b.rows, sz);
+        const padPt = mmToPt(1.5);
+        const drawRow = (cells: { inlines: Inline[]; align?: 'left' | 'center' | 'right' }[], headerRow: boolean) => {
+          // Wrap each cell, find the tallest, reserve that height, then paint cells + borders.
+          const wrapped = cols.map((cw, c) => {
+            const cell = cells[c] || { inlines: [] };
+            const runs: WrapRun[] = (cell.inlines.length ? cell.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: headerRow ? F.bold : runFont(r) }));
+            return wrapRuns(runs, cw - 2 * padPt, sz);
+          });
+          const maxLines = Math.max(1, ...wrapped.map((w) => w.length));
+          const rowH = maxLines * sz * lineH + 2 * padPt;
+          const yTop = advance(rowH); // baseline slot for first line region
+          const rowTopY = yTop + ASCENT * sz + padPt;
+          const rowBotY = rowTopY - rowH;
+          let x = leftPt;
+          for (let c = 0; c < cols.length; c++) {
+            if (headerRow) ops.push({ page, kind: 'rect', x, y: rowBotY, w: cols[c], h: rowH, rgb: hexToRgb01(options.colors.codeBg) });
+            // cell text lines
+            const lines = wrapped[c];
+            for (let li = 0; li < lines.length; li++) {
+              const ly = rowTopY - padPt - ASCENT * sz - li * sz * lineH;
+              for (const seg of lines[li].segments) T(x + padPt + seg.xPt, ly, seg.text, seg.fontKey, sz, TEXT);
+            }
+            // vertical border
+            ops.push({ page, kind: 'line', x1: x, y1: rowBotY, x2: x, y2: rowTopY, wPt: 0.4, rgb: TBORDER });
+            x += cols[c];
+          }
+          // right border + horizontal borders
+          ops.push({ page, kind: 'line', x1: x, y1: rowBotY, x2: x, y2: rowTopY, wPt: 0.4, rgb: TBORDER });
+          ops.push({ page, kind: 'line', x1: leftPt, y1: rowTopY, x2: x, y2: rowTopY, wPt: 0.4, rgb: TBORDER });
+          ops.push({ page, kind: 'line', x1: leftPt, y1: rowBotY, x2: x, y2: rowBotY, wPt: 0.4, rgb: TBORDER });
+        };
+        y -= baseSize * 0.2;
+        if (b.header.length) drawRow(b.header, true);
+        for (const r of b.rows) drawRow(r, false);
         y -= baseSize * 0.6;
         break;
       }
