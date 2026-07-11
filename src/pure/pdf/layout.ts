@@ -30,6 +30,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   const hScale = options.fonts.headingScale;
   const TEXT = hexToRgb01(options.colors.text);
   const MUTED = hexToRgb01(options.colors.muted);
+  const RULE = hexToRgb01(options.colors.rule);
 
   const ops: DrawOp[] = [];
   let page = 0;
@@ -67,6 +68,42 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
 
   const paraGap = baseSize * 0.7;
 
+  // Ordered/unordered list with nested children (indent grows per level).
+  const renderListItems = (items: { inlines: Inline[]; children?: Block[] }[], ordered: boolean, level: number) => {
+    const indent = mmToPt(6) * (level + 1);
+    for (let i = 0; i < items.length; i++) {
+      const marker = ordered ? `${i + 1}.` : '•';
+      const markerRun: Inline = { text: marker + '  ' };
+      const runs = [markerRun, ...items[i].inlines];
+      emitInlines(runs, baseSize, null, TEXT, baseSize * 0.25, indent - mmToPt(6));
+      for (const child of (items[i].children || [])) {
+        if (child.type === 'list') renderListItems(child.items, child.ordered, level + 1);
+        else renderBlockIndented(child, indent, TEXT);
+      }
+    }
+    y -= baseSize * 0.4;
+  };
+
+  // Render a single block with an extra left indent (used by lists/blockquotes).
+  const renderBlockIndented = (b: Block, indentPt: number, rgb: [number, number, number]) => {
+    if (b.type === 'paragraph') emitInlines(b.inlines, baseSize, null, rgb, baseSize * 0.5, indentPt);
+    else renderBlock(b); // headings/etc. inside items fall back to normal rendering
+  };
+
+  // Draw a muted vertical bar spanning the blockquote's text ops added since `fromOp`.
+  const drawQuoteBars = (fromOp: number, barX: number) => {
+    const byPage = new Map<number, { top: number; bot: number }>();
+    for (let i = fromOp; i < ops.length; i++) {
+      const o = ops[i];
+      if (o.kind !== 'text') continue;
+      const cur = byPage.get(o.page) || { top: -Infinity, bot: Infinity };
+      cur.top = Math.max(cur.top, o.y + ASCENT * o.sizePt);
+      cur.bot = Math.min(cur.bot, o.y);
+      byPage.set(o.page, cur);
+    }
+    for (const [p, r] of byPage) ops.push({ page: p, kind: 'line', x1: barX, y1: r.bot, x2: barX, y2: r.top, wPt: 1.5, rgb: MUTED });
+  };
+
   const renderBlock = (b: Block) => {
     switch (b.type) {
       case 'heading': {
@@ -78,6 +115,26 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
       case 'paragraph':
         emitInlines(b.inlines, baseSize, null, TEXT, paraGap, 0);
         break;
+      case 'list':
+        renderListItems(b.items, b.ordered, 0);
+        break;
+      case 'blockquote': {
+        const barX = leftPt + mmToPt(1.5);
+        const savedIndent = mmToPt(4);
+        // Render inner blocks indented; draw the quote bar afterwards for the spanned range.
+        const before = ops.length;
+        for (const inner of b.blocks) renderBlockIndented(inner, savedIndent, MUTED);
+        // Draw a muted vertical bar on each page the quote spans.
+        drawQuoteBars(before, barX);
+        y -= baseSize * 0.3;
+        break;
+      }
+      case 'hr': {
+        const yy = advance(baseSize * lineH);
+        const midY = yy + ASCENT * baseSize * 0.4;
+        ops.push({ page, kind: 'line', x1: leftPt, y1: midY, x2: rightEdge, y2: midY, wPt: 0.5, rgb: RULE });
+        break;
+      }
       case 'unsupported':
         emitInlines([{ text: b.text }], baseSize, () => F.italic, MUTED, paraGap, 0);
         break;
