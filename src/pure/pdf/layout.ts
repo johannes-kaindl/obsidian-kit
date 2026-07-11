@@ -244,6 +244,11 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     }
   };
 
+  if (options.frame.title) {
+    const sz = baseSize * Math.pow(hScale, 7); // larger than H1
+    emitInlines([{ text: options.frame.title }], sz, () => F.bold, TEXT, baseSize * 0.9, 0);
+  }
+
   for (const b of doc) renderBlock(b);
 
   // Page numbers (footer, centred) — drawn after content so pageCount is known.
@@ -254,6 +259,18 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
       const label = String(p + 1);
       const w = textWidthPt(F.body, sz, label);
       ops.push({ page: p, kind: 'text', x: (PAGE_W - w) / 2, y: bottomY - mmToPt(6), str: label, fontKey: F.body, sizePt: sz, rgb: MUTED });
+    }
+  }
+
+  const hf = options.frame.runningHeaderFooter;
+  if (hf) {
+    const pageCount = page + 1;
+    const sz = baseSize - 3;
+    const yPos = hf.position === 'header' ? PAGE_H - mmToPt(m.top) + mmToPt(6) : bottomY - mmToPt(11);
+    for (let p = 0; p < pageCount; p++) {
+      if (hf.left) ops.push({ page: p, kind: 'text', x: leftPt, y: yPos, str: hf.left, fontKey: F.body, sizePt: sz, rgb: MUTED });
+      if (hf.center) { const w = textWidthPt(F.body, sz, hf.center); ops.push({ page: p, kind: 'text', x: (PAGE_W - w) / 2, y: yPos, str: hf.center, fontKey: F.body, sizePt: sz, rgb: MUTED }); }
+      if (hf.right) { const w = textWidthPt(F.body, sz, hf.right); ops.push({ page: p, kind: 'text', x: rightEdge - w, y: yPos, str: hf.right, fontKey: F.body, sizePt: sz, rgb: MUTED }); }
     }
   }
 
