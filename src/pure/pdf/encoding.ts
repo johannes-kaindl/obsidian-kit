@@ -11,16 +11,26 @@ const WINANSI_HIGH: Record<number, number> = {
   0x0153: 0x9C, 0x017E: 0x9E, 0x0178: 0x9F
 };
 
+/* Häufige, bedeutungstragende Nicht-WinAnsi-Symbole → ASCII-Fallback. Besser als
+   Weglassen (Sinn bleibt) und besser als '?' (das las sich als Fehler). Alles
+   andere Unmappbare (Emoji, CJK, Piktogramme) wird stillschweigend weggelassen —
+   in Core-14 nicht darstellbar, und '?'-Wüsten sind schlechter als sauberer Text. */
+const SYMBOL_ASCII: Record<number, string> = {
+  0x2192: '->', 0x2190: '<-', 0x2194: '<->', 0x21D2: '=>', 0x21D0: '<=',
+  0x2265: '>=', 0x2264: '<=', 0x2260: '!=', 0x2248: '~'
+};
+
 export function winAnsiBytes(str: string): number[] {
   const out: number[] = [];
   const s = String(str == null ? '' : str);
   for (let i = 0; i < s.length; i++) {
     const cp = s.codePointAt(i);
-    if (cp! > 0xFFFF) i++; // surrogate pair → ein Codepoint, nicht abbildbar
+    if (cp! > 0xFFFF) i++; // surrogate pair → ein Codepoint (Emoji etc.)
     if (cp! <= 0x7F) out.push(cp!);
     else if (cp! >= 0xA0 && cp! <= 0xFF) out.push(cp!);     // Latin-1
     else if (WINANSI_HIGH[cp!] != null) out.push(WINANSI_HIGH[cp!]);
-    else out.push(0x3F);                                  // '?'
+    else if (SYMBOL_ASCII[cp!] != null) { for (const ch of SYMBOL_ASCII[cp!]) out.push(ch.charCodeAt(0)); }
+    // sonst: unmappbar → weglassen (kein '?')
   }
   return out;
 }

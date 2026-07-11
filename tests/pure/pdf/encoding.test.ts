@@ -11,8 +11,15 @@ describe('winAnsiBytes', () => {
   it('maps euro sign to 0x80 (WinAnsi high range)', () => {
     expect(winAnsiBytes('€')).toEqual([0x80]);
   });
-  it('replaces unmappable codepoints with ?', () => {
-    expect(winAnsiBytes('☃')).toEqual([0x3F]);
+  it('drops unmappable codepoints (emoji, pictographs) instead of emitting ?', () => {
+    expect(winAnsiBytes('☃')).toEqual([]);            // snowman → dropped
+    expect(winAnsiBytes('🚦')).toEqual([]);           // emoji (surrogate pair) → dropped
+    expect(winAnsiBytes('a🗂️b')).toEqual([0x61, 0x62]); // emoji + variation selector dropped, letters kept
+  });
+  it('maps meaningful symbols to ASCII fallbacks', () => {
+    expect(winAnsiBytes('→')).toEqual([0x2D, 0x3E]);   // '->'
+    expect(winAnsiBytes('≥14')).toEqual([0x3E, 0x3D, 0x31, 0x34]); // '>=14'
+    expect(winAnsiBytes('≤2')).toEqual([0x3C, 0x3D, 0x32]);        // '<=2'
   });
 });
 
