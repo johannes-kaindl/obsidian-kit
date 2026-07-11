@@ -2,6 +2,30 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.9.0 — pdf: metadata block + pagination + heading scale
+
+### `obsidian-kit/pure/pdf`
+- **`metadata`-Block** (neuer IR-Typ) — `{ type: 'metadata'; entries: { key: string; value: string }[] }` rendert einen Schlüssel/Wert-Metadaten-Block (z.B. Frontmatter-Auszug) im Layout.
+- **`pagebreak`-Block** (neuer IR-Typ) + **Pagination-Optionen** — expliziter Seitenumbruch als IR-Block; Layout-Optionen zur Paginierungs-Steuerung.
+- **Keep-together für Bilder & Code** — Bild- und Code-Blöcke werden nicht mehr über Seitengrenzen zerrissen, wenn sie zusammen auf die nächste Seite passen.
+- **Zurückhaltendere `headingScale`-Faktoren** — Überschriften-Größen näher am Fließtext (weniger überzeichnete H1/H2).
+- **Emoji-Ghost-Space behoben** — nicht-abbildbare Glyphen erzeugen keine Leerbreite mehr im AFM-Wrapping (`wrap.ts`).
+
+## 0.8.1 — pdf: robuste WinAnsi-Kodierung
+
+### `obsidian-kit/pure/pdf`
+- **`encoding.ts`** — nicht-abbildbare Zeichen werden gedroppt bzw. gängige Symbole auf ASCII gemappt statt als `'?'` ausgegeben. Behebt kaputte Ausgabe bei emoji-/symbolreichen Notizen.
+
+## 0.8.0 — pdf: Markdown/IR → Vektor-PDF (Core-14)
+
+### `obsidian-kit/pure/pdf` (neu, re-exportiert über `pure/index.ts`)
+- **`renderPdf(doc, options)`** — End-to-end IR + Optionen → PDF-Bytes (`Uint8Array`), synchron; Bilder müssen vor-dekodiert sein.
+- **IR-Vertrag (`ir.ts`)** — plattformfreie, Markdown-artige IR (`Document = Block[]`): `heading`/`paragraph`/`list`/`blockquote`/`code`/`table`/`image`/`hr`/`unsupported`. Der stabile Vertrag zwischen „Markdown parsen" und „PDF schreiben".
+- **`layoutDocument`** — Paginierung, verschachtelte Listen, Blockquote-Balken, Grid-Tabellen mit Zeilenumbruch über Seiten, Code-Boxen mit Zeichenumbruch, Bilder auf Content-Breite skaliert mit Page-Break, Dokumenttitel + laufende Kopf-/Fußzeile mit Seitenzahlen.
+- **`PdfWriter`** (`writer.ts`) — Byte-Writer (text/line/rect/image-Ops, parametrisierte Seitengröße), plus `metrics.ts` (Core-14 AFM-Breiten), `wrap.ts` (AFM-genaues Wrapping), `encoding.ts` (WinAnsi), `geometry.ts`.
+
+Contract-first aus `obsidian-letterhead` portiert. 1. Consumer: **`obsidian-paperize`** (generischer MD→PDF-Export, Dach-Spec `2026-07-11-paperize-md-to-pdf-design`). Kein `window.print()`-Weg — echtes Vektor-PDF auch auf Mobile.
+
 ## 0.7.0 — model-context.ts
 
 ### `obsidian-kit/pure`
