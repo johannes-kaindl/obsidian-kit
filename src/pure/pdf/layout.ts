@@ -57,14 +57,19 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
 
   // Usable content height of a single page.
   const pageContentHeight = topYFirst - bottomY;
+  // Real usable height of a FRESH page: after a break the cursor resets to
+  // `topYFirst - ASCENT*baseSize`, so a block taller than this can't be kept whole
+  // even on its own page. Using this (not pageContentHeight) as the break-before
+  // threshold avoids a needless extra break for blocks in the ~ASCENT*baseSize window.
+  const freshPageCapacity = pageContentHeight - ASCENT * baseSize;
   // Would a block of height h fit at the current cursor position?
   const fitsHere = (h: number): boolean => (y - h) >= bottomY;
   // Force a page break: advance to the top of a fresh page.
   const forceBreak = () => { page += 1; y = topYFirst - ASCENT * baseSize; };
   // Break before the current block if it doesn't fit here but does fit on a fresh page
-  // (a block taller than a full page must split instead — leave it alone).
+  // (a block taller than a fresh page must split instead — leave it alone).
   const breakBeforeIfNeeded = (h: number) => {
-    if (!fitsHere(h) && h <= pageContentHeight) forceBreak();
+    if (!fitsHere(h) && h <= freshPageCapacity) forceBreak();
   };
 
   // Resolve an inline run to a font key for the given base set.
@@ -261,7 +266,8 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
             const runs: WrapRun[] = (cell.inlines.length ? cell.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: headerRow ? F.bold : runFont(r) }));
             return wrapRuns(runs, cw - 2 * padPt, sz);
           });
-          const rowH = rowHeight(cells, headerRow);
+          // rowH from this row's own wrap (same formula as rowHeight(); avoids a redundant re-wrap).
+          const rowH = Math.max(1, ...wrapped.map((w) => w.length)) * sz * lineH + 2 * padPt;
           const yTop = advance(rowH); // baseline slot for first line region
           const rowTopY = yTop + ASCENT * sz + padPt;
           const rowBotY = rowTopY - rowH;
@@ -286,12 +292,15 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         y -= baseSize * 0.2;
         if (PAG.keepTablesTogether) {
           const totalH = measureTable();
-          if (totalH <= pageContentHeight) breakBeforeIfNeeded(totalH);
+          if (totalH <= freshPageCapacity) breakBeforeIfNeeded(totalH);
         }
         if (b.header.length) drawRow(b.header, true);
         for (const r of b.rows) {
           // Decide the page-break explicitly and deterministically — do NOT rely on drawRow's
           // own implicit `advance` break, which would skip the header-repeat step below.
+          // (Edge, accepted: if a single header+row jointly exceed a fresh page — a
+          // pathologically tall header — drawRow's own advance splits inside the row without a
+          // repeated header. Real tables have short headers and never hit this.)
           if (!fitsHere(rowHeight(r, false))) {
             forceBreak();
             if (PAG.repeatTableHeader && b.header.length) drawRow(b.header, true);
