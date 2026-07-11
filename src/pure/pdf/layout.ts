@@ -15,6 +15,11 @@ export interface LayoutResult { pageCount: number; ops: DrawOp[] }
 
 const ASCENT = 0.78;
 
+// Restrained heading scale (multipliers of body size) — calm, letterhead-like
+// proportions. `headingScale` in options acts as an overall tuning multiplier.
+const HEADING_MUL: Record<number, number> = { 1: 1.45, 2: 1.25, 3: 1.12, 4: 1.0, 5: 0.94, 6: 0.9 };
+const TITLE_MUL = 1.7;
+
 export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResult {
   const { wPt: PAGE_W, hPt: PAGE_H } = pageSizePt(options.page.size);
   const m = options.page.marginMm;
@@ -136,9 +141,9 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   const renderBlock = (b: Block) => {
     switch (b.type) {
       case 'heading': {
-        const sz = baseSize * Math.pow(hScale, 7 - b.level); // H1 largest
-        y -= baseSize * 0.4; // space above heading
-        emitInlines(b.inlines, sz, () => F.bold, TEXT, baseSize * 0.35, 0);
+        const sz = baseSize * (HEADING_MUL[b.level] || 1) * hScale;
+        y -= sz * 0.55; // space above heading scales with its size (groups toward following content)
+        emitInlines(b.inlines, sz, () => F.bold, TEXT, baseSize * 0.28, 0);
         break;
       }
       case 'paragraph':
@@ -222,6 +227,29 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         y -= baseSize * 0.6;
         break;
       }
+      case 'metadata': {
+        if (!b.entries.length) break;
+        const sz = baseSize - 0.5;
+        const keyW = mmToPt(30);
+        const lineHt = sz * 1.35;
+        y -= baseSize * 0.1;
+        for (const e of b.entries) {
+          const valLines = wrapRuns([{ text: e.value, fontKey: F.body }], contentWidthPt - keyW, sz);
+          const lns = valLines.length ? valLines : [{ segments: [], widthPt: 0 }];
+          for (let li = 0; li < lns.length; li++) {
+            const yy = advance(lineHt);
+            if (li === 0) T(leftPt, yy, e.key, F.body, sz, MUTED); // key (muted) only on the first wrapped line
+            for (const seg of lns[li].segments) T(leftPt + keyW + seg.xPt, yy, seg.text, F.body, sz, TEXT);
+          }
+        }
+        // hairline rule separating metadata from the body
+        y -= baseSize * 0.2;
+        const yy = advance(baseSize * 0.4);
+        const midY = yy + ASCENT * sz * 0.5;
+        ops.push({ page, kind: 'line', x1: leftPt, y1: midY, x2: rightEdge, y2: midY, wPt: 0.4, rgb: TBORDER });
+        y -= baseSize * 0.5;
+        break;
+      }
       case 'unsupported':
         emitInlines([{ text: b.text }], baseSize, () => F.italic, MUTED, paraGap, 0);
         break;
@@ -245,8 +273,8 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   };
 
   if (options.frame.title) {
-    const sz = baseSize * Math.pow(hScale, 7); // larger than H1
-    emitInlines([{ text: options.frame.title }], sz, () => F.bold, TEXT, baseSize * 0.9, 0);
+    const sz = baseSize * TITLE_MUL * hScale; // largest element, but restrained
+    emitInlines([{ text: options.frame.title }], sz, () => F.bold, TEXT, baseSize * 0.7, 0);
   }
 
   for (const b of doc) renderBlock(b);

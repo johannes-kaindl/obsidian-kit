@@ -24,4 +24,14 @@ describe('wrapRuns', () => {
     const lines = wrapRuns([{ text: 'supercalifragilistic', fontKey: 'helv' }], 10, 12);
     expect(lines.length).toBe(1);
   });
+  it('drops zero-width ghost tokens (dropped emoji) so text starts flush', () => {
+    // '🚦' encodes to nothing → zero width; the following text must start at x 0.
+    const lines = wrapRuns([{ text: '🚦 Cockpit', fontKey: 'helv' }], 1000, 12);
+    expect(lines[0].segments[0].text).toBe('Cockpit');
+    expect(lines[0].segments[0].xPt).toBe(0);
+  });
+  it('collapses the double space a dropped glyph would strand', () => {
+    const lines = wrapRuns([{ text: 'a ✅ b', fontKey: 'helv' }], 1000, 12);
+    expect(lines[0].segments.map(s => s.text).join('')).toBe('a b');
+  });
 });

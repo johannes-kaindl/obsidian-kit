@@ -17,15 +17,24 @@ export interface WrapLine { segments: WrapSegment[]; widthPt: number }
 type Tok = { w: string; fontKey: string; space: boolean };
 
 export function wrapRuns(runs: WrapRun[], maxWidthPt: number, sizePt: number): WrapLine[] {
-  const toks: Tok[] = [];
+  const widthOf = (t: Tok) => textWidthPt(t.fontKey, sizePt, t.w);
+  const raw: Tok[] = [];
   for (const r of runs) {
     const parts = String(r.text).split(/(\s+)/);
     for (const part of parts) {
       if (part === '') continue;
-      toks.push({ w: /^\s+$/.test(part) ? ' ' : part, fontKey: r.fontKey, space: /^\s+$/.test(part) });
+      raw.push({ w: /^\s+$/.test(part) ? ' ' : part, fontKey: r.fontKey, space: /^\s+$/.test(part) });
     }
   }
-  const widthOf = (t: Tok) => textWidthPt(t.fontKey, sizePt, t.w);
+  // Normalise: a non-space token that renders to zero width (e.g. an emoji fully
+  // dropped by WinAnsi encoding) leaves a "ghost" — drop it, and collapse the
+  // consecutive spaces it would strand so headings/lines start flush.
+  const toks: Tok[] = [];
+  for (const t of raw) {
+    if (!t.space && widthOf(t) === 0) continue;
+    if (t.space && (toks.length === 0 || toks[toks.length - 1].space)) continue;
+    toks.push(t);
+  }
   const lines = [];
   let cur = [], curW = 0;
   for (const t of toks) {

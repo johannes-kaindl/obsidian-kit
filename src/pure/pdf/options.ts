@@ -20,7 +20,7 @@ export interface LayoutOptions {
 
 export const DEFAULT_OPTIONS: LayoutOptions = {
   page: { size: 'A4', marginMm: { top: 20, right: 20, bottom: 20, left: 20 } },
-  fonts: { body: 'sans', baseSizePt: 11, lineHeight: 1.4, headingScale: 1.15 },
+  fonts: { body: 'sans', baseSizePt: 10.5, lineHeight: 1.45, headingScale: 1 },
   colors: { text: '#1a1a1a', muted: '#666666', rule: '#cccccc', codeBg: '#f4f4f4', tableBorder: '#cccccc' },
   frame: { title: null, pageNumbers: true, runningHeaderFooter: null },
   image: { maxWidthPct: 100 },

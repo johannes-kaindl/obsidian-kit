@@ -29,6 +29,7 @@ export type Block =
   | { type: 'table'; header: Cell[]; rows: Cell[][] }
   | { type: 'image'; data: Uint8Array; wPx: number; hPx: number; alt?: string }
   | { type: 'hr' }
+  | { type: 'metadata'; entries: { key: string; value: string }[] }
   | { type: 'unsupported'; text: string };
 
 export type Document = Block[];
