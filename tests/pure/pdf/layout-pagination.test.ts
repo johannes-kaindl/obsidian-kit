@@ -43,4 +43,27 @@ describe('pagination — pagebreak + keep-together', () => {
     const r = layoutDocument(doc, o);
     expect(r.ops.some(op => op.kind === 'text' && op.str === 'X')).toBe(true);
   });
+  it('repeats the table header on each page a long table spans', () => {
+    const rows = Array.from({ length: 90 }, (_, i) => [{ inlines: [{ text: `r${i}` }] }, { inlines: [{ text: 'x' }] }]);
+    const doc: Block[] = [{ type: 'table', header: [{ inlines: [{ text: 'HKEY' }] }, { inlines: [{ text: 'H2' }] }], rows }];
+    const r = layoutDocument(doc, opts());
+    const headerOps = r.ops.filter((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str === 'HKEY');
+    const pagesWithHeader = new Set(headerOps.map(o => o.page));
+    expect(r.pageCount).toBeGreaterThan(1);
+    expect(pagesWithHeader.size).toBe(r.pageCount); // header on every page the table touches
+  });
+  it('keeps a small table together (breaks before rather than splitting) near page end', () => {
+    const doc: Block[] = [...fill(60), { type: 'table', header: [{ inlines: [{ text: 'A' }] }], rows: [[{ inlines: [{ text: '1' }] }], [{ inlines: [{ text: '2' }] }], [{ inlines: [{ text: '3' }] }]] }];
+    const r = layoutDocument(doc, opts());
+    const a = r.ops.find((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str === 'A')!;
+    const one = r.ops.find((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str === '1')!;
+    expect(a.page).toBe(one.page); // header and first row on the same page
+  });
+  it('repeatTableHeader off → header only once', () => {
+    const o = opts(); o.pagination.repeatTableHeader = false;
+    const rows = Array.from({ length: 90 }, (_, i) => [{ inlines: [{ text: `r${i}` }] }]);
+    const r = layoutDocument([{ type: 'table', header: [{ inlines: [{ text: 'HK' }] }], rows }], o);
+    const hdr = r.ops.filter((o): o is Extract<DrawOp,{kind:'text'}> => o.kind === 'text' && o.str === 'HK');
+    expect(hdr.length).toBe(1);
+  });
 });

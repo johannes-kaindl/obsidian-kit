@@ -238,6 +238,22 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
         const sz = baseSize - 1;
         const cols = columnWidths(b.header, b.rows, sz);
         const padPt = mmToPt(1.5);
+        // Height a row would occupy — single source of truth shared by drawRow (render) and
+        // measureTable (keep-together pre-check), so the two can never drift apart.
+        const rowHeight = (cells: { inlines: Inline[]; align?: 'left' | 'center' | 'right' }[], headerRow: boolean): number => {
+          const wrapped = cols.map((cw, c) => {
+            const cell = cells[c] || { inlines: [] };
+            const runs: WrapRun[] = (cell.inlines.length ? cell.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: headerRow ? F.bold : runFont(r) }));
+            return wrapRuns(runs, cw - 2 * padPt, sz);
+          });
+          const maxLines = Math.max(1, ...wrapped.map((w) => w.length));
+          return maxLines * sz * lineH + 2 * padPt;
+        };
+        const measureTable = (): number => {
+          let h = b.header.length ? rowHeight(b.header, true) : 0;
+          for (const r of b.rows) h += rowHeight(r, false);
+          return h;
+        };
         const drawRow = (cells: { inlines: Inline[]; align?: 'left' | 'center' | 'right' }[], headerRow: boolean) => {
           // Wrap each cell, find the tallest, reserve that height, then paint cells + borders.
           const wrapped = cols.map((cw, c) => {
@@ -245,8 +261,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
             const runs: WrapRun[] = (cell.inlines.length ? cell.inlines : [{ text: '' }]).map((r) => ({ text: r.text, fontKey: headerRow ? F.bold : runFont(r) }));
             return wrapRuns(runs, cw - 2 * padPt, sz);
           });
-          const maxLines = Math.max(1, ...wrapped.map((w) => w.length));
-          const rowH = maxLines * sz * lineH + 2 * padPt;
+          const rowH = rowHeight(cells, headerRow);
           const yTop = advance(rowH); // baseline slot for first line region
           const rowTopY = yTop + ASCENT * sz + padPt;
           const rowBotY = rowTopY - rowH;
@@ -269,8 +284,20 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
           ops.push({ page, kind: 'line', x1: leftPt, y1: rowBotY, x2: x, y2: rowBotY, wPt: 0.4, rgb: TBORDER });
         };
         y -= baseSize * 0.2;
+        if (PAG.keepTablesTogether) {
+          const totalH = measureTable();
+          if (totalH <= pageContentHeight) breakBeforeIfNeeded(totalH);
+        }
         if (b.header.length) drawRow(b.header, true);
-        for (const r of b.rows) drawRow(r, false);
+        for (const r of b.rows) {
+          // Decide the page-break explicitly and deterministically — do NOT rely on drawRow's
+          // own implicit `advance` break, which would skip the header-repeat step below.
+          if (!fitsHere(rowHeight(r, false))) {
+            forceBreak();
+            if (PAG.repeatTableHeader && b.header.length) drawRow(b.header, true);
+          }
+          drawRow(r, false);
+        }
         y -= baseSize * 0.6;
         break;
       }
