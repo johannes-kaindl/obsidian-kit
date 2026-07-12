@@ -1,13 +1,14 @@
 {
   "name": "obsidian-kit",
-  "version": "0.10.1",
+  "version": "0.12.0",
   "description": "Shared, drift-free modules extracted from Johannes Kaindl's Obsidian plugins",
   "type": "module",
   "license": "AGPL-3.0-or-later",
   "author": "Johannes Kaindl",
   "exports": {
     "./pure": "./src/pure/index.ts",
-    "./testing": "./src/testing/obsidian-mock.ts"
+    "./testing": "./src/testing/obsidian-mock.ts",
+    "./obsidian": "./src/obsidian/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "eslint": "^9",
+    "obsidian": "^1.7.2",
     "typescript": "^5.5",
     "typescript-eslint": "^8",
     "vitest": "^2"

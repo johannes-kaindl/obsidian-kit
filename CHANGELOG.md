@@ -2,6 +2,16 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.12.0 — obsidian/: collapsibleSection (erste obsidian-gekoppelte UI-Schicht)
+
+### `obsidian-kit/obsidian` (neu — der Layer war seit v0.1.0 reserviert und leer)
+- **`collapsibleSection(containerEl, opts)`** — rendert eine einklappbare Settings-Sektion (klickbarer Header mit Chevron + Titel, Body-Container) und gibt den Body zurück, in den der Consumer seine Inhalte baut. Startet eingeklappt (`defaultCollapsed`-Default `true`).
+- **`resolveCollapsed(key, defaultCollapsed, storage?)`** — pure Auflösung des initialen Zustands: persistierter Wert falls gesetzt (`getCollapsed` liefert nicht `undefined`), sonst `defaultCollapsed` (so wirkt ein per-Sektion-Default beim ersten Mal und wird danach vom gespeicherten Zustand abgelöst).
+- **`CollapsibleStorage`** — optionaler `getCollapsed`/`setCollapsed`-Callback (`getCollapsed → boolean | undefined`, `undefined` = kein gespeicherter Wert); das Kit bleibt storage-agnostisch (der Consumer verdrahtet z. B. `data.json`).
+- **`COLLAPSIBLE_CSS`** — CSS-Snippet (nur Theme-Variablen), das der Consumer in seine `styles.css` übernimmt; das Kit injiziert bewusst kein CSS selbst.
+- Infra: `tsconfig.json` `lib` um `DOM` erweitert, `obsidian` als devDependency ergänzt (bringt die `HTMLElement`-Augmentierungen wie `createDiv`/`createSpan`/`toggleClass`), `vitest.config.ts` bekommt einen `obsidian → src/testing/obsidian-mock.ts`-Alias.
+
+Aktiviert den bislang reservierten `src/obsidian/`-Layer.
 ## 0.9.0 — pdf: metadata block + pagination + heading scale
 
 ### `obsidian-kit/pure/pdf`
