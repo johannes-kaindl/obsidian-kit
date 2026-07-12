@@ -31,6 +31,11 @@ describe("resolveCollapsed", () => {
     const storage = { getCollapsed: () => false, setCollapsed: () => {} };
     expect(resolveCollapsed(undefined, true, storage)).toBe(true);
   });
+  it("fällt auf defaultCollapsed zurück wenn kein Wert gespeichert (getCollapsed → undefined)", () => {
+    const storage = { getCollapsed: (): boolean | undefined => undefined, setCollapsed: () => {} };
+    expect(resolveCollapsed("sec", false, storage)).toBe(false);
+    expect(resolveCollapsed("sec", true, storage)).toBe(true);
+  });
 });
 
 describe("collapsibleSection", () => {
