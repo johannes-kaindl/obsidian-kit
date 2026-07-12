@@ -2,7 +2,13 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
-## 0.12.0 — obsidian/: collapsibleSection (erste obsidian-gekoppelte UI-Schicht)
+## 0.13.0 — obsidian/: collapsibleSection tastaturbedienbar (a11y)
+
+### `obsidian-kit/obsidian`
+- **`collapsibleSection` ist jetzt tastatur- und screenreader-bedienbar** — der Header trägt `role="button"` + `tabindex="0"` (per Tab fokussierbar) und ein `aria-expanded`, das synchron zum Auf/Zu-Zustand gesetzt wird. **Enter** und **Leertaste** toggeln (Leertaste mit `preventDefault` gegen Seiten-Scroll). Deckt WCAG 2.1.1 (Keyboard) + 4.1.2 (Name/Role/Value) ab. Rein additiv — Signatur, Rückgabewert und Klick-Verhalten unverändert.
+- **`COLLAPSIBLE_CSS`** um eine `:focus-visible`-Regel ergänzt (sichtbarer Fokus-Ring über `--interactive-accent`). Consumer, die das CSS übernommen haben, ziehen die Regel nach.
+
+
 
 ### `obsidian-kit/obsidian` (neu — der Layer war seit v0.1.0 reserviert und leer)
 - **`collapsibleSection(containerEl, opts)`** — rendert eine einklappbare Settings-Sektion (klickbarer Header mit Chevron + Titel, Body-Container) und gibt den Body zurück, in den der Consumer seine Inhalte baut. Startet eingeklappt (`defaultCollapsed`-Default `true`).

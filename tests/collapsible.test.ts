@@ -12,7 +12,8 @@ interface FakeElement {
   children: FakeElement[];
   textContent: string;
   hasClass(cls: string): boolean;
-  dispatchEvent(evt: { type: string }): boolean;
+  getAttribute(name: string): string | null;
+  dispatchEvent(evt: { type: string; key?: string; preventDefault?: () => void }): boolean;
 }
 
 function fakeContainer(): FakeElement {
@@ -71,9 +72,64 @@ describe("collapsibleSection", () => {
   });
 });
 
+describe("collapsibleSection a11y", () => {
+  // c.children[0] = section, section.children[0] = header (erstes createDiv-Kind).
+  const header = (c: FakeElement): FakeElement => c.children[0].children[0];
+
+  it("macht den Header zum fokussierbaren Schalter (role=button, tabindex=0)", () => {
+    const c = fakeContainer();
+    collapsibleSection(c as unknown as HTMLElement, { title: "Chat" });
+    expect(header(c).getAttribute("role")).toBe("button");
+    expect(header(c).getAttribute("tabindex")).toBe("0");
+  });
+  it("aria-expanded spiegelt den Zustand: eingeklappt → false, nach Toggle → true", () => {
+    const c = fakeContainer();
+    collapsibleSection(c as unknown as HTMLElement, { title: "Chat" });
+    expect(header(c).getAttribute("aria-expanded")).toBe("false");
+    header(c).dispatchEvent({ type: "click" });
+    expect(header(c).getAttribute("aria-expanded")).toBe("true");
+  });
+  it("aria-expanded übernimmt den initialen storage-Zustand (offen → true)", () => {
+    const c = fakeContainer();
+    const storage = { getCollapsed: () => false, setCollapsed: () => {} };
+    collapsibleSection(c as unknown as HTMLElement, { title: "Chat", key: "chat", storage });
+    expect(header(c).getAttribute("aria-expanded")).toBe("true");
+  });
+  it("Enter toggelt auf, persistiert und ruft preventDefault", () => {
+    const c = fakeContainer();
+    const calls: Array<[string, boolean]> = [];
+    const storage = { getCollapsed: () => true, setCollapsed: (k: string, v: boolean) => calls.push([k, v]) };
+    const body = collapsibleSection(c as unknown as HTMLElement, { title: "Chat", key: "chat", storage });
+    let prevented = false;
+    header(c).dispatchEvent({ type: "keydown", key: "Enter", preventDefault: () => { prevented = true; } });
+    expect(body.hasClass("is-collapsed")).toBe(false);
+    expect(calls).toEqual([["chat", false]]);
+    expect(prevented).toBe(true);
+  });
+  it("Leertaste toggelt und ruft preventDefault (verhindert Seiten-Scroll)", () => {
+    const c = fakeContainer();
+    const body = collapsibleSection(c as unknown as HTMLElement, { title: "Chat" });
+    let prevented = false;
+    header(c).dispatchEvent({ type: "keydown", key: " ", preventDefault: () => { prevented = true; } });
+    expect(body.hasClass("is-collapsed")).toBe(false);
+    expect(prevented).toBe(true);
+  });
+  it("ignoriert andere Tasten (kein Toggle, kein preventDefault)", () => {
+    const c = fakeContainer();
+    const body = collapsibleSection(c as unknown as HTMLElement, { title: "Chat" });
+    let prevented = false;
+    header(c).dispatchEvent({ type: "keydown", key: "a", preventDefault: () => { prevented = true; } });
+    expect(body.hasClass("is-collapsed")).toBe(true);
+    expect(prevented).toBe(false);
+  });
+});
+
 describe("COLLAPSIBLE_CSS", () => {
   it("ist ein nicht-leeres CSS-Snippet mit der Body-Hide-Regel", () => {
     expect(COLLAPSIBLE_CSS).toContain(".okit-collapsible-body.is-collapsed");
     expect(COLLAPSIBLE_CSS).toContain("display: none");
+  });
+  it("enthält eine sichtbare :focus-visible-Regel für den Header", () => {
+    expect(COLLAPSIBLE_CSS).toContain(".okit-collapsible-header:focus-visible");
   });
 });
