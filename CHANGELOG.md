@@ -2,6 +2,11 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.14.0 — obsidian/: ClockPort + realClock (injizierter Timer-/Clock-Port)
+
+### `obsidian-kit/obsidian`
+- **Neues Modul `clock`** — `ClockPort` (`{ now(), setTimeout(fn, ms), clearTimeout(id) }`) + `realClock` (echte `window`-Timer, `now` via `Date.now`). Injizierter Timer-Port: getesteter Code nimmt den Port statt barer `window`-Globals → node-testbar (kein `window` in `testEnvironment: node`) **und** konform zum Community-Store-Linter (`window`/`activeWindow` statt bare Globals/`globalThis`). Extrahiert aus vault-crews (Superset mit `now()`), vim-dojo und neurovim-standalone (Regel-der-Drei). Liegt in `src/obsidian/` (nicht `pure/`), weil `realClock` `window` berührt; der **Typ** `ClockPort` ist via `import type` runtime-frei für getesteten Code nutzbar.
+
 ## 0.13.0 — obsidian/: collapsibleSection tastaturbedienbar (a11y)
 
 ### `obsidian-kit/obsidian`
