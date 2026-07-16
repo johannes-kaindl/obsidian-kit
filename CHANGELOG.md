@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.15.0 — pdf: layoutDocument komponierbar (Start-/Folgeseiten-Cursor)
+
+### `obsidian-kit/pure/pdf`
+- **`LayoutOptions.page.startY`** (optional) — initiale Baseline-Y (PDF-pt) auf Seite 0; ohne Angabe unverändert `topYFirst - ASCENT*baseSize` (alte Semantik).
+- **`LayoutOptions.page.followTopMm`** (optional) — Top-Kante (mm von oben) für Seite ≥1; ohne Angabe unverändert `marginMm.top`.
+- **`LayoutResult.endPage`/`endY`** — Cursor-Position nach dem letzten Block (nächste freie Baseline), damit ein Aufrufer weitere Inhalte nahtlos anschließen kann.
+- Rein additiv: ohne die neuen Felder ist die Ausgabe byte-identisch zu 0.10.1; `renderPdf` ignoriert die neuen Felder unverändert.
+
+Consumer: **`obsidian-letterhead`** (Brief-Body eingebettet in eine Seite mit vorhandenem Kopf).
+
+> Entwickelt als 0.11.0 auf `feat/shared-pdf-engine`; bis zum Merge lief `main` auf 0.14.0
+> weiter (0.12.0–0.14.0 betreffen ausschließlich `src/obsidian/`, keine Überschneidung).
+> Beim Merge auf die nächste freie Minor gehoben — die 0.11.0 wurde nie getaggt.
+
 ## 0.14.0 — obsidian/: ClockPort + realClock (injizierter Timer-/Clock-Port)
 
 ### `obsidian-kit/obsidian`
@@ -13,7 +27,7 @@ Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist d
 - **`collapsibleSection` ist jetzt tastatur- und screenreader-bedienbar** — der Header trägt `role="button"` + `tabindex="0"` (per Tab fokussierbar) und ein `aria-expanded`, das synchron zum Auf/Zu-Zustand gesetzt wird. **Enter** und **Leertaste** toggeln (Leertaste mit `preventDefault` gegen Seiten-Scroll). Deckt WCAG 2.1.1 (Keyboard) + 4.1.2 (Name/Role/Value) ab. Rein additiv — Signatur, Rückgabewert und Klick-Verhalten unverändert.
 - **`COLLAPSIBLE_CSS`** um eine `:focus-visible`-Regel ergänzt (sichtbarer Fokus-Ring über `--interactive-accent`). Consumer, die das CSS übernommen haben, ziehen die Regel nach.
 
-
+## 0.12.0 — obsidian/: collapsibleSection (erste obsidian-gekoppelte UI-Schicht)
 
 ### `obsidian-kit/obsidian` (neu — der Layer war seit v0.1.0 reserviert und leer)
 - **`collapsibleSection(containerEl, opts)`** — rendert eine einklappbare Settings-Sektion (klickbarer Header mit Chevron + Titel, Body-Container) und gibt den Body zurück, in den der Consumer seine Inhalte baut. Startet eingeklappt (`defaultCollapsed`-Default `true`).
@@ -23,6 +37,7 @@ Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist d
 - Infra: `tsconfig.json` `lib` um `DOM` erweitert, `obsidian` als devDependency ergänzt (bringt die `HTMLElement`-Augmentierungen wie `createDiv`/`createSpan`/`toggleClass`), `vitest.config.ts` bekommt einen `obsidian → src/testing/obsidian-mock.ts`-Alias.
 
 Aktiviert den bislang reservierten `src/obsidian/`-Layer.
+
 ## 0.9.0 — pdf: metadata block + pagination + heading scale
 
 ### `obsidian-kit/pure/pdf`

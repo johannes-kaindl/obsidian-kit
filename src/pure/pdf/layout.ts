@@ -11,7 +11,7 @@ export type DrawOp =
   | { page: number; kind: 'rect'; x: number; y: number; w: number; h: number; rgb: [number, number, number] }
   | { page: number; kind: 'image'; data: Uint8Array; wPx: number; hPx: number; x: number; y: number; w: number; h: number };
 
-export interface LayoutResult { pageCount: number; ops: DrawOp[] }
+export interface LayoutResult { pageCount: number; ops: DrawOp[]; endPage: number; endY: number }
 
 const ASCENT = 0.78;
 
@@ -28,9 +28,11 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
   const contentWidthPt = rightEdge - leftPt;
   const topYFirst = PAGE_H - mmToPt(m.top);
   const bottomY = mmToPt(m.bottom);
+  const followTop = options.page.followTopMm != null ? PAGE_H - mmToPt(options.page.followTopMm) : topYFirst;
 
   const F = fontSet(options.fonts.body);
   const baseSize = options.fonts.baseSizePt;
+  const freshBaseline = () => followTop - ASCENT * baseSize; // top baseline on pages ≥1
   const lineH = options.fonts.lineHeight;
   const hScale = options.fonts.headingScale;
   const TEXT = hexToRgb01(options.colors.text);
@@ -41,7 +43,7 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
 
   const ops: DrawOp[] = [];
   let page = 0;
-  let y = topYFirst - ASCENT * baseSize; // baseline of the first line
+  let y = options.page.startY != null ? options.page.startY : topYFirst - ASCENT * baseSize; // baseline of the first line
 
   const T = (x: number, yy: number, str: string, fontKey: string, sz: number, rgb: [number, number, number]) => {
     if (str !== '' && str != null) ops.push({ page, kind: 'text', x, y: yy, str: String(str), fontKey, sizePt: sz, rgb });
@@ -49,23 +51,23 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
 
   // Move the cursor down by h pt; page-break if it would cross the bottom margin.
   const advance = (h: number): number => {
-    if (y - h < bottomY) { page += 1; y = topYFirst - ASCENT * baseSize; }
+    if (y - h < bottomY) { page += 1; y = freshBaseline(); }
     const yy = y; y -= h; return yy;
   };
 
   const PAG = options.pagination;
 
   // Usable content height of a single page.
-  const pageContentHeight = topYFirst - bottomY;
+  const pageContentHeight = followTop - bottomY;
   // Real usable height of a FRESH page: after a break the cursor resets to
-  // `topYFirst - ASCENT*baseSize`, so a block taller than this can't be kept whole
+  // `followTop - ASCENT*baseSize`, so a block taller than this can't be kept whole
   // even on its own page. Using this (not pageContentHeight) as the break-before
   // threshold avoids a needless extra break for blocks in the ~ASCENT*baseSize window.
   const freshPageCapacity = pageContentHeight - ASCENT * baseSize;
   // Would a block of height h fit at the current cursor position?
   const fitsHere = (h: number): boolean => (y - h) >= bottomY;
   // Force a page break: advance to the top of a fresh page.
-  const forceBreak = () => { page += 1; y = topYFirst - ASCENT * baseSize; };
+  const forceBreak = () => { page += 1; y = freshBaseline(); };
   // Break before the current block if it doesn't fit here but does fit on a fresh page
   // (a block taller than a fresh page must split instead — leave it alone).
   const breakBeforeIfNeeded = (h: number) => {
@@ -389,5 +391,5 @@ export function layoutDocument(doc: Block[], options: LayoutOptions): LayoutResu
     }
   }
 
-  return { pageCount: page + 1, ops };
+  return { pageCount: page + 1, ops, endPage: page, endY: y };
 }
