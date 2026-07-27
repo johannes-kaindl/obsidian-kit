@@ -209,11 +209,14 @@ export class SliderComponent {
 export class ButtonComponent {
   buttonEl: any = makeFakeEl();
   clickCB: (() => any) | null = null;
-  setButtonText(_t: string): this { return this; }
+  textValue = "";
+  ctaSet = false;
+  warningSet = false;
+  setButtonText(t: string): this { this.textValue = String(t ?? ""); return this; }
   setIcon(_i: string): this { return this; }
   setClass(_c: string): this { return this; }
-  setCta(): this { return this; }
-  setWarning(): this { return this; }
+  setCta(): this { this.ctaSet = true; return this; }
+  setWarning(): this { this.warningSet = true; return this; }
   setTooltip(_t: string): this { return this; }
   setDisabled(_d: boolean): this { return this; }
   onClick(cb: () => any): this { this.clickCB = cb; return this; }
@@ -333,12 +336,14 @@ export class PluginSettingTab {
 // component (powerful superset over kuro/markdown which skipped the call).
 // ---------------------------------------------------------------------------
 export class Setting {
+  static __last: Setting | null = null;
   settingEl: any;
   components: any[] = [];
   nameValue = "";
   descValue = "";
   constructor(public containerEl: any) {
     this.settingEl = containerEl?.createDiv ? containerEl.createDiv({ cls: "setting-item" }) : makeFakeEl();
+    Setting.__last = this;
   }
   setName(name: any): this { this.nameValue = String(name ?? ""); return this; }
   setDesc(desc: any): this { this.descValue = String(desc ?? ""); return this; }
@@ -405,14 +410,15 @@ export class TextFileView extends ItemView {
 }
 
 export class Modal {
+  static __last: Modal | null = null;
   app: any;
   contentEl: any = makeFakeEl();
   titleEl: any = makeFakeEl();
   modalEl: any = makeFakeEl();
   scope: any = new Scope();
-  constructor(app?: any) { this.app = app; }
-  open(): void {}
-  close(): void {}
+  constructor(app?: any) { this.app = app; Modal.__last = this; }
+  open(): void { this.onOpen(); }
+  close(): void { this.onClose(); }
   onOpen(): void {}
   onClose(): void {}
   setTitle(_t: string): this { return this; }

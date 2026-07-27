@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createObsidianMock, Setting, Notice, TFile } from "../src/testing/obsidian-mock";
+import { createObsidianMock, Setting, Notice, TFile, Modal, makeFakeEl } from "../src/testing/obsidian-mock";
 
 describe("createObsidianMock", () => {
   it("liefert die Basis-Stubs", () => {
@@ -38,5 +38,32 @@ describe("createObsidianMock", () => {
     expect(f.basename).toBe("foo");
     expect(f.extension).toBe("md");
     expect(f.name).toBe("foo.md");
+  });
+});
+
+describe("Mock-Erweiterung für Modal-Tests (confirm)", () => {
+  it("ButtonComponent zeichnet Text, CTA und Warning auf", () => {
+    const s = new Setting(makeFakeEl());
+    s.addButton((b) => b.setButtonText("Löschen").setWarning());
+    s.addButton((b) => b.setButtonText("OK").setCta());
+    expect(s.components[0].textValue).toBe("Löschen");
+    expect(s.components[0].warningSet).toBe(true);
+    expect(s.components[0].ctaSet).toBe(false);
+    expect(s.components[1].ctaSet).toBe(true);
+  });
+  it("Setting.__last zeigt auf die zuletzt erzeugte Instanz", () => {
+    const s = new Setting(makeFakeEl());
+    expect(Setting.__last).toBe(s);
+  });
+  it("Modal.open()/close() rufen onOpen()/onClose(); __last zeigt auf die Instanz", () => {
+    const calls: string[] = [];
+    class M extends Modal {
+      onOpen(): void { calls.push("open"); }
+      onClose(): void { calls.push("close"); }
+    }
+    const m = new M({});
+    expect(Modal.__last).toBe(m);
+    m.open(); m.close();
+    expect(calls).toEqual(["open", "close"]);
   });
 });
