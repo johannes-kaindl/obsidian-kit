@@ -49,10 +49,9 @@ Präfix-Unterschiede zwischen den Consumern kapseln:
 Drei neue Dateien unter `obsidian-kit/src/pure/pdf/`:
 
 - **`code-blocks.ts`** — verbatim aus letterhead, `codePlaceholder`/`parseCodePlaceholder`/
-  `extractCodeBlocks` nehmen zusätzlich `prefix: string` entgegen (letzter Parameter oder
-  vorangestellt — Entscheidung beim Schreiben: vorangestellt, da Pflichtparameter ohne
-  Default sinnvoller ist als ein optionaler Default, der die Präfix-Kollision zwischen
-  Consumern stillschweigend ermöglichen würde).
+  `extractCodeBlocks` nehmen zusätzlich `prefix: string` als **letzten** Parameter entgegen
+  (kein Default — ein optionaler Default würde die Präfix-Kollision zwischen Consumern
+  stillschweigend ermöglichen).
 - **`dom-to-ir.ts`** — verbatim aus letterhead (aktuell byte-identisch mit paperize), `opts`
   erweitert um `resolvePlaceholder?: (text: string) => number | null` statt des lokalen
   `parseCodePlaceholder`-Imports.
