@@ -9,8 +9,8 @@ function fakeCanvas(): HTMLCanvasElement {
     fillRect: vi.fn(),
     drawImage: vi.fn(),
   } as unknown as CanvasRenderingContext2D;
-  canvas.getContext = vi.fn(() => ctx) as any;
-  canvas.toDataURL = vi.fn(() => 'data:image/jpeg;base64,AAAA') as any;
+  canvas.getContext = vi.fn(() => ctx) as unknown as HTMLCanvasElement['getContext'];
+  canvas.toDataURL = vi.fn(() => 'data:image/jpeg;base64,AAAA');
   return canvas;
 }
 
@@ -29,7 +29,7 @@ describe('imageToJpeg', () => {
       naturalHeight = 1000;
       set src(_v: string) { queueMicrotask(() => this.onload && this.onload()); }
     }
-    (globalThis as any).Image = FakeImage;
+    (globalThis as unknown as { Image: typeof Image }).Image = FakeImage as unknown as typeof Image;
 
     try {
       const result = await imageToJpeg('data:image/png;base64,x', fakeCanvas, 1000);
@@ -49,7 +49,7 @@ describe('imageToJpeg', () => {
       onerror: (() => void) | null = null;
       set src(_v: string) { queueMicrotask(() => this.onerror && this.onerror()); }
     }
-    (globalThis as any).Image = FailingImage;
+    (globalThis as unknown as { Image: typeof Image }).Image = FailingImage as unknown as typeof Image;
 
     try {
       const result = await imageToJpeg('data:image/png;base64,x', fakeCanvas);
@@ -68,12 +68,12 @@ describe('imageToJpeg', () => {
       naturalHeight = 100;
       set src(_v: string) { queueMicrotask(() => this.onload && this.onload()); }
     }
-    (globalThis as any).Image = FakeImage;
+    (globalThis as unknown as { Image: typeof Image }).Image = FakeImage as unknown as typeof Image;
 
     try {
       const noCtxCanvas = () => {
         const c = document.createElement('canvas');
-        c.getContext = vi.fn(() => null) as any;
+        c.getContext = vi.fn(() => null);
         return c;
       };
       const result = await imageToJpeg('data:image/png;base64,x', noCtxCanvas);

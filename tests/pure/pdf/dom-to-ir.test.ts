@@ -2,6 +2,11 @@
 import { describe, it, expect } from 'vitest';
 import { domToIrSync, resolveImages } from '../../../src/pure/pdf/dom-to-ir';
 import { codePlaceholder, parseCodePlaceholder } from '../../../src/pure/pdf/code-blocks';
+import type { Block, Inline } from '../../../src/pure/pdf/ir';
+
+type ParagraphBlock = Extract<Block, { type: 'paragraph' }>;
+type ListBlock = Extract<Block, { type: 'list' }>;
+type TableBlock = Extract<Block, { type: 'table' }>;
 
 function dom(html: string): HTMLElement {
   const d = document.createElement('div');
@@ -19,24 +24,25 @@ describe('domToIrSync', () => {
 
   it('maps a paragraph with bold and italic runs', () => {
     const { blocks } = domToIrSync(dom('<p>a <strong>b</strong> <em>c</em></p>'));
-    const p = blocks[0] as any;
+    const p = blocks[0] as ParagraphBlock;
     expect(p.type).toBe('paragraph');
-    expect(p.inlines.some((r: any) => r.bold)).toBe(true);
-    expect(p.inlines.some((r: any) => r.italic)).toBe(true);
+    expect(p.inlines.some((r: Inline) => r.bold)).toBe(true);
+    expect(p.inlines.some((r: Inline) => r.italic)).toBe(true);
   });
 
   it('maps nested lists', () => {
     const { blocks } = domToIrSync(dom('<ul><li>top<ul><li>child</li></ul></li></ul>'));
-    const list = blocks[0] as any;
+    const list = blocks[0] as ListBlock;
     expect(list.type).toBe('list');
-    expect(list.items[0].children[0].type).toBe('list');
+    expect(list.items[0].children![0].type).toBe('list');
   });
 
   it('does not duplicate nested list text into the parent item inlines', () => {
     const { blocks } = domToIrSync(dom('<ul><li>top<ul><li>child</li></ul></li></ul>'));
-    const list = blocks[0] as any;
-    const childItem = list.items[0].children[0].items[0];
-    const childText = childItem.inlines.map((r: any) => r.text).join('');
+    const list = blocks[0] as ListBlock;
+    const childList = list.items[0].children![0] as ListBlock;
+    const childItem = childList.items[0];
+    const childText = childItem.inlines.map((r: Inline) => r.text).join('');
     expect(childText).toBe('child');
   });
 
@@ -47,7 +53,7 @@ describe('domToIrSync', () => {
 
   it('maps a table with header and rows', () => {
     const { blocks } = domToIrSync(dom('<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>a1</td></tr></tbody></table>'));
-    const t = blocks[0] as any;
+    const t = blocks[0] as TableBlock;
     expect(t.type).toBe('table');
     expect(t.header.length).toBe(1);
     expect(t.rows.length).toBe(1);
@@ -106,7 +112,7 @@ describe('resolveImages', () => {
     const { blocks } = await resolveImages(
       [{ type: 'image', data: new Uint8Array(0), wPx: 0, hPx: 0 }],
       [el],
-      async () => ({ data: new Uint8Array([1]), wPx: 10, hPx: 20 }),
+      () => Promise.resolve({ data: new Uint8Array([1]), wPx: 10, hPx: 20 }),
     );
     expect(blocks[0]).toEqual({ type: 'image', data: new Uint8Array([1]), wPx: 10, hPx: 20, alt: undefined });
   });
@@ -117,7 +123,7 @@ describe('resolveImages', () => {
     const { blocks, unsupportedAdded } = await resolveImages(
       [{ type: 'image', data: new Uint8Array(0), wPx: 0, hPx: 0, alt: 'Logo' }],
       [el],
-      async () => null,
+      () => Promise.resolve(null),
     );
     expect(unsupportedAdded).toBe(1);
     expect(blocks[0]).toMatchObject({ type: 'unsupported' });
