@@ -212,6 +212,10 @@ export class ButtonComponent {
   textValue = "";
   ctaSet = false;
   warningSet = false;
+  constructor(containerEl?: any) {
+    if (containerEl?.appendChild) containerEl.appendChild(this.buttonEl);
+    this.buttonEl.__component = this;
+  }
   setButtonText(t: string): this { this.textValue = String(t ?? ""); return this; }
   setIcon(_i: string): this { return this; }
   setClass(_c: string): this { return this; }

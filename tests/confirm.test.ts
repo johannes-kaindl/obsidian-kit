@@ -1,14 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { makeFakeApp, Setting, Modal } from "../src/testing/obsidian-mock";
+import { makeFakeApp, Modal } from "../src/testing/obsidian-mock";
 import { confirmAction } from "../src/obsidian/confirm";
 import type { ConfirmOptions } from "../src/obsidian/confirm";
 
-// confirmAction erzeugt sein Modal intern — die Mock-Handles (Modal.__last,
-// Setting.__last) sind der Zugriffsweg, analog FuzzySuggestModal.__instance.
+// confirmAction erzeugt sein Modal intern — Modal.__last ist der Zugriffsweg,
+// analog FuzzySuggestModal.__instance. Die Buttons liegen in einem
+// modal-button-container-Div in contentEl; [0]=Cancel, [1]=Confirm (UI-STANDARD §2).
 function openConfirm(opts: ConfirmOptions): { p: Promise<boolean>; modal: any; confirm: any; cancel: any } {
   const p = confirmAction(makeFakeApp() as never, opts);
   const modal: any = Modal.__last;
-  const [confirm, cancel] = (Setting.__last as any).components;
+  const container = modal.contentEl.children.find((c: any) => c.className === "modal-button-container");
+  expect(container).toBeTruthy();
+  const [cancel, confirm] = container.children.map((c: any) => c.__component);
   return { p, modal, confirm, cancel };
 }
 
