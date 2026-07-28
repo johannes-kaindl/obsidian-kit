@@ -455,8 +455,8 @@ export abstract class AbstractInputSuggest<T> {
   abstract getSuggestions(query: string): T[] | Promise<T[]>;
   abstract renderSuggestion(value: T, el: any): void;
   selectSuggestion(_value: T, _evt?: any): void { this.close(); }
-  setValue(_v: string): void {}
-  getValue(): string { return ""; }
+  setValue(v: string): void { if (this.inputEl) this.inputEl.value = v; }
+  getValue(): string { return this.inputEl?.value ?? ""; }
   onSelect(_cb: (value: T, evt?: any) => any): this { return this; }
   open(): void {}
   close(): void {}
