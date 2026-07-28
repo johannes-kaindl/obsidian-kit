@@ -14,7 +14,7 @@ Drei Subpfade, über die `exports`-Map auf **rohe `.ts`** (kein Build-Schritt):
 |---|---|---|
 | `obsidian-kit/pure` | `ThinkSplitter`, `parseSSE`, `normalizeEndpoint`, `resolveActiveEndpoint`, `clampInt`, i18n-Engine, `KIT_VERSION` | **kein** obsidian-Import (Node-testbar, PROF-OBS-03/04) — per eslint erzwungen |
 | `obsidian-kit/testing` | `createObsidianMock()` + alle Stubs (Obsidian-Test-Double) | nur im Test-Pfad, **nie** ins `main.js` gebündelt |
-| `obsidian-kit/obsidian` | `collapsibleSection` (seit v0.12.0) · `ClockPort`/`realClock` (seit v0.14.0) · `confirmAction`/`ConfirmOptions` (seit v0.16.0, ab v0.16.1 UI-STANDARD-§2-konform) — obsidian/runtime-gekoppelte Helfer | darf obsidian importieren |
+| `obsidian-kit/obsidian` | `collapsibleSection` (seit v0.12.0) · `ClockPort`/`realClock` (seit v0.14.0) · `confirmAction`/`ConfirmOptions` (seit v0.16.0, ab v0.16.1 UI-STANDARD-§2-konform) · `FolderSuggest` (seit v0.18.0) — obsidian/runtime-gekoppelte Helfer | darf obsidian importieren |
 
 `dom-safe` und `http` sind **bewusst nicht** im Kit: sie sind keine echte Code-Duplikation, sondern geteilte **Regeln** (PROF-OBS-12/13). Siehe Spec §2.
 
@@ -57,6 +57,7 @@ export * from "obsidian-kit/testing";
 | `createObsidianMock` | `createObsidianMock(overrides?) → MockStubs` | PROF-OBS-08 |
 | `collapsibleSection` | `collapsibleSection(containerEl, {title, defaultCollapsed?, key?, storage?}) → HTMLElement` (Body-Container; startet eingeklappt) | — |
 | `ClockPort` / `realClock` | Interface `{now(), setTimeout(fn, ms), clearTimeout(id)}` + `realClock` (echte `window`-Timer). Injizierter Timer-/Clock-Port: hält timer-nutzenden Code node-testbar (kein bares `window`), erfüllt Community-Store-Linter | — |
+| `FolderSuggest` | `new FolderSuggest(app, inputEl)` — Ordner-Autocomplete am Text-Input (`AbstractInputSuggest<string>`; Substring-Filter, 20er-Cap; `selectSuggestion` dispatcht `input`, damit Setting-`onChange` feuert) | — |
 
 Jedes Modul trägt sein TSDoc am Source — bei der raw-`.ts`-Verteilung erscheint es direkt im IntelliSense/Hover des Konsumenten. Migrations-Rezepte: [`MIGRATION.md`](MIGRATION.md).
 

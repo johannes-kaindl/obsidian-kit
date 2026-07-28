@@ -2,6 +2,23 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.18.0 — obsidian: FolderSuggest (Ordner-Autocomplete)
+
+### `obsidian-kit/obsidian`
+- **`FolderSuggest`** (neu, exportiert) — Ordner-Autocomplete für Settings-Textfelder
+  (`AbstractInputSuggest<string>`: `getAllFolders()` → case-insensitiver Substring-Filter →
+  `slice(0, 20)`). Verbatim gehoben aus vault-rag/local-image-generator/kuro-gamification
+  (REGISTRY „Ordner-Autocomplete", n=4 — das vierte Exemplar lag unkatalogisiert in
+  apple-health). Zwei load-bearing Details: `dispatchEvent(new Event("input"))` in
+  `selectSuggestion` (sonst feuert Setting-onChange nach Klick-Auswahl nicht) und der
+  20er-Cap für große Vaults.
+- Test-Mock: `AbstractInputSuggest.setValue`/`getValue` spiegeln jetzt nach `inputEl.value`
+  (vorher no-ops) — rückwärtskompatibel.
+
+Consumer-Rollout (im Anschluss): vault-rag, local-image-generator, kuro-gamification,
+apple-health — die zwei bisherigen Peer-Vendorings (kuro, apple-health) damit erstmals
+sauber gepinnt. Staffelung ist der Normalzustand.
+
 ## 0.17.1 — confirm: destruktiver Button ohne deprecated API
 
 ### `obsidian-kit/obsidian`
