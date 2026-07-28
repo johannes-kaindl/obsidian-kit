@@ -7,6 +7,9 @@ import { LayoutOptions } from './options';
 
 export * from './ir';
 export * from './options';
+export * from './dom-to-ir';
+export * from './code-blocks';
+export { imageToJpeg } from './image';
 export { layoutDocument } from './layout';
 export type { DrawOp } from './layout';
 

@@ -2,6 +2,22 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.17.0 — pdf: dom-to-ir + code-blocks + image aus letterhead/paperize gehoben
+
+### `obsidian-kit/pure/pdf`
+- **`code-blocks.ts`** (neu) — `extractCodeBlocks`/`codePlaceholder`/`parseCodePlaceholder`,
+  parametrisiert per `prefix`-Argument (kein Default — jeder Consumer bindet seinen eigenen
+  Präfix, verhindert stille Kollisionen).
+- **`dom-to-ir.ts`** (neu) — `domToIrSync`/`resolveImages`. Platzhalter-Auflösung über
+  `opts.resolvePlaceholder: (text) => number | null` statt fester Kopplung an
+  `code-blocks.ts` — Consumer binden `(t) => parseCodePlaceholder(t, PREFIX)` selbst.
+- **`image.ts`** (neu) — `imageToJpeg(src, makeCanvas, maxWpx)`. Canvas wird als Factory
+  injiziert (kein Obsidian-Global im Kit-Modul).
+- Hard-Dupe zwischen `obsidian-letterhead` und `obsidian-paperize` aufgelöst (waren nach dem
+  Code-Fence-Fix vom 2026-07-28 byte-identisch bzw. nur im Platzhalter-Präfix unterschiedlich).
+
+Consumer: **`obsidian-letterhead`**, **`obsidian-paperize`**.
+
 ## 0.15.0 — pdf: layoutDocument komponierbar (Start-/Folgeseiten-Cursor)
 
 ### `obsidian-kit/pure/pdf`
