@@ -2,5 +2,5 @@ export { resolveCollapsed, collapsibleSection, COLLAPSIBLE_CSS } from "./collaps
 export type { CollapsibleStorage, CollapsibleOptions } from "./collapsible";
 export { realClock } from "./clock";
 export type { ClockPort } from "./clock";
-export { confirmAction } from "./confirm";
+export { confirmAction, applyDestructive } from "./confirm";
 export type { ConfirmOptions } from "./confirm";

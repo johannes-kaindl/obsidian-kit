@@ -212,6 +212,7 @@ export class ButtonComponent {
   textValue = "";
   ctaSet = false;
   warningSet = false;
+  destructiveSet = false;
   constructor(containerEl?: any) {
     if (containerEl?.appendChild) containerEl.appendChild(this.buttonEl);
     this.buttonEl.__component = this;
@@ -220,7 +221,11 @@ export class ButtonComponent {
   setIcon(_i: string): this { return this; }
   setClass(_c: string): this { return this; }
   setCta(): this { this.ctaSet = true; return this; }
+  /** @deprecated ab Obsidian 1.13 — Pendant zur echten API, damit Konsumenten den Feature-Check testen können. */
   setWarning(): this { this.warningSet = true; return this; }
+  /** Erst ab Obsidian 1.13 vorhanden. Tests des <1.13-Fallbacks löschen die Methode am
+   *  Prototyp (`delete ButtonComponent.prototype.setDestructive`) — s. tests/confirm.test.ts. */
+  setDestructive(): this { this.destructiveSet = true; return this; }
   setTooltip(_t: string): this { return this; }
   setDisabled(_d: boolean): this { return this; }
   onClick(cb: () => any): this { this.clickCB = cb; return this; }

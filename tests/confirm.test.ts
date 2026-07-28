@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeFakeApp, Modal } from "../src/testing/obsidian-mock";
+import { makeFakeApp, Modal, ButtonComponent } from "../src/testing/obsidian-mock";
 import { confirmAction } from "../src/obsidian/confirm";
 import type { ConfirmOptions } from "../src/obsidian/confirm";
 
@@ -63,12 +63,39 @@ describe("confirmAction", () => {
     expect(k2.textValue).toBe("Abbrechen");
   });
 
-  it("warning defaultet auf setWarning; warning:false nutzt setCta", () => {
+  // Der openConfirm-Helper liefert das Modal-Innere untypisiert (any) — für die Button-
+  // Assertions auf den Mock-Typ zurückholen statt unsafe-member-access zu erzeugen.
+  const btn = (c: unknown): ButtonComponent => c as ButtonComponent;
+  const classNameOf = (b: ButtonComponent): string => (b.buttonEl as { className: string }).className;
+
+  it("warning defaultet auf destruktiv; warning:false nutzt setCta", () => {
     const { confirm } = openConfirm({ message: "m" });
-    expect(confirm.warningSet).toBe(true);
-    expect(confirm.ctaSet).toBe(false);
+    expect(btn(confirm).destructiveSet).toBe(true);
+    expect(btn(confirm).ctaSet).toBe(false);
     const { confirm: c2 } = openConfirm({ message: "m", warning: false });
-    expect(c2.ctaSet).toBe(true);
-    expect(c2.warningSet).toBe(false);
+    expect(btn(c2).ctaSet).toBe(true);
+    expect(btn(c2).destructiveSet).toBe(false);
+  });
+
+  // setWarning() ist ab Obsidian 1.13 deprecated, setDestructive() gibt es erst ab 1.13 —
+  // Konsumenten mit kleinerer minAppVersion brauchen deshalb einen Laufzeit-Check statt
+  // eines harten Aufrufs (Muster: vault-rag/src/settings.ts → applyDestructive).
+  it("nutzt setDestructive, wenn die API vorhanden ist (Obsidian >= 1.13)", () => {
+    const { confirm } = openConfirm({ message: "m" });
+    expect(btn(confirm).destructiveSet).toBe(true);
+    expect(btn(confirm).warningSet).toBe(false);
+  });
+
+  it("faellt auf die mod-warning-Klasse zurueck, wenn setDestructive fehlt (< 1.13)", () => {
+    const proto = ButtonComponent.prototype as unknown as Record<string, unknown>;
+    const orig = proto.setDestructive;
+    delete proto.setDestructive;
+    try {
+      const { confirm } = openConfirm({ message: "m" });
+      expect(btn(confirm).destructiveSet).toBe(false);
+      expect(classNameOf(btn(confirm))).toContain("mod-warning");
+    } finally {
+      proto.setDestructive = orig;
+    }
   });
 });

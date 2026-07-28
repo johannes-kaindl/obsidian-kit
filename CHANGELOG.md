@@ -2,6 +2,23 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.17.1 — confirm: destruktiver Button ohne deprecated API
+
+### `obsidian-kit/obsidian`
+- **`applyDestructive(button)`** (neu, exportiert) — markiert einen `ButtonComponent`
+  destruktiv per Laufzeit-Check: `setDestructive()` wenn vorhanden (Obsidian ≥ 1.13), sonst
+  die native CSS-Klasse `mod-warning`. Beides hart aufzurufen ist falsch — `setWarning()` ist
+  ab 1.13 deprecated und wird im **Community-Store-Review angemahnt**, `setDestructive()` wirft
+  bei Konsumenten mit `minAppVersion < 1.13` zur Laufzeit.
+- **`confirm.ts` nutzt es** statt `setWarning()`. Für Konsumenten verhaltensgleich; der Fix
+  entfernt einen Store-Review-Befund, den das Vendoring sonst in jedes Plugin trägt
+  (gefunden in `vault-rag`, nachdem dessen Lint-Gate auf `--max-warnings 0` gehärtet wurde).
+- Test-Mock: `ButtonComponent.setDestructive()` + `destructiveSet`; der `< 1.13`-Fallback wird
+  über `delete ButtonComponent.prototype.setDestructive` geprüft.
+
+Consumer: **`vault-rag`** (re-vendored). Andere confirm-Konsumenten ziehen bei Bedarf nach —
+Staffelung ist der Normalzustand.
+
 ## 0.17.0 — pdf: dom-to-ir + code-blocks + image aus letterhead/paperize gehoben
 
 ### `obsidian-kit/pure/pdf`
