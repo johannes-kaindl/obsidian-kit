@@ -20,20 +20,20 @@
 
 ## File Structure
 
-**obsidian-kit** (`/Users/Shared/code/obsidian-plugins/obsidian-kit`):
+**obsidian-kit** (dieses Repo, Pfade repo-relativ):
 - Create: `src/pure/model-context.ts` — `ModelContext`-Interface + `parseLmStudioContext`/`parseOllamaContext`.
 - Create: `tests/model-context.test.ts` — Tests für beide Parser.
 - Modify: `src/pure/index.ts` — Re-Export + `KIT_VERSION` Bump.
 - Modify: `CHANGELOG.md` — Backfill 0.3.0–0.6.0 + neuer 0.7.0-Eintrag.
 - Modify: `package.json` — `version: "0.4.0"` → `"0.7.0"`.
 
-**vault-crews** (`/Users/Shared/code/obsidian-plugins/vault-crews`):
+**vault-crews** (Schwester-Repo, `../vault-crews`):
 - Create: `src/vendor/kit/reasoning.ts` — vendorte Kopie aus Kit `0.7.0`.
 - Create: `src/vendor/kit/model-context.ts` — vendorte Kopie aus Kit `0.7.0`.
 - Modify: `src/core/model-info.ts` — wird zur reinen Re-Export-Fassade (keine eigene Logik mehr).
 - Unverändert (Regressionscheck): `tests/core/model-info.test.ts`.
 
-**obsidian-plugins** (`/Users/Shared/code/obsidian-plugins`, Dach-Repo):
+**obsidian-plugins** (`..`, Dach-Repo):
 - Modify: `REGISTRY.md` — neue Zeile (Kontextlängen-Parser), `reasoning.ts`-Zeile (vault-crews ergänzen), `endpoint_diagnostics`-Zeile (Drift-Flag entfernen).
 
 ---
@@ -41,16 +41,16 @@
 ### Task 1: Kit — `model-context.ts` extrahieren (TDD)
 
 **Files:**
-- Create: `/Users/Shared/code/obsidian-plugins/obsidian-kit/tests/model-context.test.ts`
-- Create: `/Users/Shared/code/obsidian-plugins/obsidian-kit/src/pure/model-context.ts`
-- Modify: `/Users/Shared/code/obsidian-plugins/obsidian-kit/src/pure/index.ts`
+- Create: `tests/model-context.test.ts`
+- Create: `src/pure/model-context.ts`
+- Modify: `src/pure/index.ts`
 
 **Interfaces:**
 - Produces: `interface ModelContext { maxContextLength?: number; loadedContextLength?: number }`, `parseLmStudioContext(json: unknown, model: string): ModelContext | null`, `parseOllamaContext(json: unknown): ModelContext | null` — beide re-exportiert aus `obsidian-kit/pure`.
 
 - [ ] **Step 1: Write the failing test**
 
-Datei `/Users/Shared/code/obsidian-plugins/obsidian-kit/tests/model-context.test.ts`:
+Datei `tests/model-context.test.ts`:
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -88,12 +88,12 @@ describe("parseOllamaContext", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/obsidian-kit && npx vitest run tests/model-context.test.ts`
+Run: `cd <repo-root> && npx vitest run tests/model-context.test.ts`
 Expected: FAIL — `Cannot find module '../src/pure/model-context'` (Datei existiert noch nicht).
 
 - [ ] **Step 3: Write minimal implementation**
 
-Datei `/Users/Shared/code/obsidian-plugins/obsidian-kit/src/pure/model-context.ts`:
+Datei `src/pure/model-context.ts`:
 
 ```ts
 export interface ModelContext {
@@ -131,12 +131,12 @@ export function parseOllamaContext(json: unknown): ModelContext | null {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/obsidian-kit && npx vitest run tests/model-context.test.ts`
+Run: `cd <repo-root> && npx vitest run tests/model-context.test.ts`
 Expected: PASS (6 Tests grün).
 
 - [ ] **Step 5: Re-Export + KIT_VERSION bump**
 
-In `/Users/Shared/code/obsidian-plugins/obsidian-kit/src/pure/index.ts` nach der `reasoning`-Export-Zeile ergänzen:
+In `src/pure/index.ts` nach der `reasoning`-Export-Zeile ergänzen:
 
 ```ts
 export { type ModelContext, parseLmStudioContext, parseOllamaContext } from "./model-context";
@@ -156,13 +156,13 @@ export const KIT_VERSION = "0.7.0";
 
 - [ ] **Step 6: Volle Kit-Verifikation**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/obsidian-kit && npm test && npm run typecheck && npm run lint`
+Run: `cd <repo-root> && npm test && npm run typecheck && npm run lint`
 Expected: alle drei grün (kein Fehler, kein Lint-Warning in den neuen Dateien).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/Shared/code/obsidian-plugins/obsidian-kit
+cd <repo-root>
 git add tests/model-context.test.ts src/pure/model-context.ts src/pure/index.ts
 git commit -m "$(cat <<'EOF'
 feat(model-context): parseLmStudioContext/parseOllamaContext ins Kit extrahieren (0.7.0), TDD
@@ -177,8 +177,8 @@ EOF
 ### Task 2: Kit — Versions-Reparatur (CHANGELOG-Backfill + package.json-Bump)
 
 **Files:**
-- Modify: `/Users/Shared/code/obsidian-plugins/obsidian-kit/CHANGELOG.md`
-- Modify: `/Users/Shared/code/obsidian-plugins/obsidian-kit/package.json:3`
+- Modify: `CHANGELOG.md`
+- Modify: `package.json:3`
 
 **Interfaces:**
 - Consumes: Task 1 (der 0.7.0-Eintrag beschreibt exakt das dort gebaute Modul).
@@ -186,7 +186,7 @@ EOF
 
 - [ ] **Step 1: CHANGELOG.md — fünf Einträge einfügen**
 
-In `/Users/Shared/code/obsidian-plugins/obsidian-kit/CHANGELOG.md` direkt **vor** der Zeile `## 0.2.0 — resolveActiveEndpoint` folgenden Block einfügen (Reihenfolge: neueste zuerst):
+In `CHANGELOG.md` direkt **vor** der Zeile `## 0.2.0 — resolveActiveEndpoint` folgenden Block einfügen (Reihenfolge: neueste zuerst):
 
 ```markdown
 ## 0.7.0 — model-context.ts
@@ -234,7 +234,7 @@ Die bestehenden Abschnitte `## 0.2.0 — resolveActiveEndpoint` und `## 0.1.0 �
 
 - [ ] **Step 2: package.json-Version bumpen**
 
-In `/Users/Shared/code/obsidian-plugins/obsidian-kit/package.json` Zeile 3 ändern von:
+In `package.json` Zeile 3 ändern von:
 
 ```json
   "version": "0.4.0",
@@ -248,13 +248,13 @@ zu:
 
 - [ ] **Step 3: Verifikation**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/obsidian-kit && npm test && npm run typecheck && npm run lint`
+Run: `cd <repo-root> && npm test && npm run typecheck && npm run lint`
 Expected: alle drei weiterhin grün (reine Doku-/Metadaten-Änderung, kein Code betroffen).
 
 - [ ] **Step 4: Commit + lokaler Tag**
 
 ```bash
-cd /Users/Shared/code/obsidian-plugins/obsidian-kit
+cd <repo-root>
 git add CHANGELOG.md package.json
 git commit -m "$(cat <<'EOF'
 chore: release 0.7.0 (model-context.ts) + CHANGELOG-Backfill 0.3.0–0.6.0
@@ -276,10 +276,10 @@ Kein `git push`/`push --tags` — Tag bleibt lokal (Global Constraints).
 ### Task 3: vault-crews — Vendoring + Facade-Refactor (Dedupe)
 
 **Files:**
-- Create: `/Users/Shared/code/obsidian-plugins/vault-crews/src/vendor/kit/reasoning.ts`
-- Create: `/Users/Shared/code/obsidian-plugins/vault-crews/src/vendor/kit/model-context.ts`
-- Modify: `/Users/Shared/code/obsidian-plugins/vault-crews/src/core/model-info.ts`
-- Test (unverändert, Regressionscheck): `/Users/Shared/code/obsidian-plugins/vault-crews/tests/core/model-info.test.ts`
+- Create: `../vault-crews/src/vendor/kit/reasoning.ts`
+- Create: `../vault-crews/src/vendor/kit/model-context.ts`
+- Modify: `../vault-crews/src/core/model-info.ts`
+- Test (unverändert, Regressionscheck): `../vault-crews/tests/core/model-info.test.ts`
 
 **Interfaces:**
 - Consumes: `src/core/local-llm-client.ts:9` (`import { parseLmStudioContext, parseOllamaContext, suppressParams } from './model-info'`) und `src/core/orchestrator.ts:15` (`import { isAlwaysOnThinker } from './model-info'`) — beide Importe müssen nach dem Refactor unverändert funktionieren.
@@ -287,7 +287,7 @@ Kein `git push`/`push --tags` — Tag bleibt lokal (Global Constraints).
 
 - [ ] **Step 1: `reasoning.ts` vendoren**
 
-Datei `/Users/Shared/code/obsidian-plugins/vault-crews/src/vendor/kit/reasoning.ts`:
+Datei `../vault-crews/src/vendor/kit/reasoning.ts`:
 
 ```ts
 // vendored from obsidian-kit#0.7.0, src/pure/reasoning.ts
@@ -328,7 +328,7 @@ export function isAlwaysOnThinker(model: string): boolean {
 
 - [ ] **Step 2: `model-context.ts` vendoren**
 
-Datei `/Users/Shared/code/obsidian-plugins/vault-crews/src/vendor/kit/model-context.ts`:
+Datei `../vault-crews/src/vendor/kit/model-context.ts`:
 
 ```ts
 // vendored from obsidian-kit#0.7.0, src/pure/model-context.ts
@@ -367,7 +367,7 @@ export function parseOllamaContext(json: unknown): ModelContext | null {
 
 - [ ] **Step 3: `model-info.ts` zur Re-Export-Fassade umbauen**
 
-Ersetze den **gesamten Inhalt** von `/Users/Shared/code/obsidian-plugins/vault-crews/src/core/model-info.ts` mit:
+Ersetze den **gesamten Inhalt** von `../vault-crews/src/core/model-info.ts` mit:
 
 ```ts
 /** Re-Export-Fassade für die aus obsidian-kit vendorten Modell-Metadaten-Module.
@@ -380,18 +380,18 @@ export { suppressParams, isAlwaysOnThinker } from '../vendor/kit/reasoning';
 
 - [ ] **Step 4: Regressionscheck laufen lassen**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/vault-crews && npx vitest run tests/core/model-info.test.ts`
+Run: `cd ../vault-crews && npx vitest run tests/core/model-info.test.ts`
 Expected: PASS — alle 10 bestehenden Tests grün, unverändert (Datei `tests/core/model-info.test.ts` wird **nicht** angefasst).
 
 - [ ] **Step 5: Volle vault-crews-Verifikation**
 
-Run: `cd /Users/Shared/code/obsidian-plugins/vault-crews && npm run gate`
+Run: `cd ../vault-crews && npm run gate`
 Expected: `lint`, `typecheck`, `typecheck:test`, `test`, `check:pure`, `check:bundle` alle grün. `check:pure` bleibt grün, weil weder `src/core/model-info.ts` noch die neuen `src/vendor/kit/*.ts`-Dateien `obsidian` importieren.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/Shared/code/obsidian-plugins/vault-crews
+cd ../vault-crews
 git add src/vendor/kit/reasoning.ts src/vendor/kit/model-context.ts src/core/model-info.ts
 git commit -m "$(cat <<'EOF'
 refactor(model-info): reasoning.ts + model-context.ts aus Kit vendoren
@@ -412,16 +412,16 @@ EOF
 ### Task 4: obsidian-plugins (Dach) — REGISTRY.md nachziehen
 
 **Files:**
-- Modify: `/Users/Shared/code/obsidian-plugins/REGISTRY.md:18` (reasoning.ts-Zeile)
-- Modify: `/Users/Shared/code/obsidian-plugins/REGISTRY.md:20` (endpoint_diagnostics-Zeile)
-- Modify: `/Users/Shared/code/obsidian-plugins/REGISTRY.md` (neue Zeile für Kontextlängen-Parser, direkt nach Zeile 18)
+- Modify: `../REGISTRY.md:18` (reasoning.ts-Zeile)
+- Modify: `../REGISTRY.md:20` (endpoint_diagnostics-Zeile)
+- Modify: `../REGISTRY.md` (neue Zeile für Kontextlängen-Parser, direkt nach Zeile 18)
 
 **Interfaces:**
 - Consumes: Ergebnisse aus Task 1 (Kit-Version 0.7.0) und Task 3 (vault-crews vendort jetzt beide Module).
 
 - [ ] **Step 1: Neue Registry-Zeile für Kontextlängen-Parser**
 
-In `/Users/Shared/code/obsidian-plugins/REGISTRY.md` direkt **nach** Zeile 18 (der `reasoning.ts`-Zeile) folgende neue Tabellenzeile einfügen:
+In `../REGISTRY.md` direkt **nach** Zeile 18 (der `reasoning.ts`-Zeile) folgende neue Tabellenzeile einfügen:
 
 ```markdown
 | Kontextlängen aus LM-Studio-/Ollama-Probe parsen (`/api/v0/models` `max_context_length`/`loaded_context_length`, Ollama `POST /api/show` `model_info["<arch>.context_length"]`) | `obsidian-kit/pure` → `model-context.ts` (`parseLmStudioContext`/`parseOllamaContext`, Typ `ModelContext`) | im Kit, 0.7.0 (vendored: vault-crews) |
@@ -458,7 +458,7 @@ Neue Zeile:
 - [ ] **Step 4: Commit (Dach-Repo)**
 
 ```bash
-cd /Users/Shared/code/obsidian-plugins
+cd ..
 git add REGISTRY.md
 git commit -m "$(cat <<'EOF'
 docs(registry): Kontextlängen-Parser im Kit (0.7.0), reasoning.ts-Vendor-Liste + Drift-Flag räumen

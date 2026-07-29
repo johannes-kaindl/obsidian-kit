@@ -1,8 +1,12 @@
 # AGENTS
 
+> **Workspace-Standards (maintainer-lokal):** Die verbindliche Leitkonvention steht in `_docs/CONVENTIONS.md`
+> im Multi-Projekt-Workspace des Maintainers, `../../_docs` relativ zu diesem Repo — nicht Teil dieses Repos,
+> ignorieren falls im Klon nicht vorhanden. Modell comply-or-explain.
+
 ## Dach-Kontext (obsidian-plugins)
 
-Dieses Repo liegt unter dem Koordinations-Dach `/Users/Shared/code/obsidian-plugins/`.
+Dieses Repo liegt unter dem Koordinations-Dach `obsidian-plugins/` (das Verzeichnis direkt über dem Repo-Root, `../`).
 **Vor dem Lösen eines Problems:** `../AGENTS.md` (Kit-first-Regel) und `../REGISTRY.md`
 (Lösungs-Registry) prüfen — viele Probleme sind in Nachbar-Plugins oder im
 `obsidian-kit` bereits gelöst.
@@ -25,3 +29,14 @@ Normalzustand.
 der Plugins greift hier strukturell nicht. Verteilung: SemVer-Tag **ohne `v`-Präfix** + manueller
 Dual-Forge-Push (Codeberg kanonisch + GitHub-Mirror). Version = `KIT_VERSION`-Konstante
 (`src/pure/index.ts`) + git-Tag; jeder Tag bekommt einen `CHANGELOG.md`-Eintrag.
+
+## Memory
+
+- **SDD-Artefakte (seit 2026-07-16): Cockpit, nicht Repo** — Specs/Plans/Task-Reports leben im
+  Coding-Cockpit des Maintainers (`$VAULT/25_Coding/obsidian-kit/_SDD/`, CORE-META-14, maintainer-lokal).
+  Sie tragen Arbeitskontext (Vault-Pfade, Schwester-Repo-Interna), der in einem public Repo niemandem nützt.
+  Das Repo behält die Design-Essenz in dieser Datei + `CHANGELOG.md`.
+- **Alt-Bestand:** `docs/superpowers/{specs,plans}/` ist eingefroren — nichts Neues dort ablegen.
+- **Nie im Repo:** absolute Pfade außerhalb des Repos (`/Users/…`, Vault-Pfade) — Platzhalter nutzen
+  (`$VAULT/…`, `~/…`, repo-relativ). Herkunftsnachweise als Repo-Name + `Datei:Zeile` sind dagegen erwünscht.
+  Gate: `scripts/check-no-abs-paths.mjs` (Teil von `npm test`).

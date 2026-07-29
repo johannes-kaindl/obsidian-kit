@@ -21,7 +21,7 @@ Leitprinzipien:
 
 ## 2. Verifizierte Evidenz-Matrix
 
-Jeder Brief-Claim wurde gegen den aktuellen Quellcode unter `/Users/Shared/code/<plugin>` geprüft (`diff`/`cmp`/`grep`, vollständige Datei-Reads). **Fett = Korrektur gegenüber dem Brief.**
+Jeder Brief-Claim wurde gegen den aktuellen Quellcode im jeweiligen Plugin-Repo (`<plugin>`, Schwester-Repos im Workspace) geprüft (`diff`/`cmp`/`grep`, vollständige Datei-Reads). **Fett = Korrektur gegenüber dem Brief.**
 
 | Modul | Brief sagte | Verifizierter Befund | Verdikt |
 |---|---|---|---|
