@@ -27,7 +27,7 @@ Normalzustand.
 **Release = Tag-only (bewusste Abweichung von PROF-OBS-09).** Das Kit ist eine Source-Library
 **ohne Build-Artefakt** (kein `main.js`, kein npm-Publish) — der unified `npm run release`-Flow
 der Plugins greift hier strukturell nicht. Verteilung: SemVer-Tag **ohne `v`-Präfix** + manueller
-Dual-Forge-Push (Codeberg kanonisch + GitHub-Mirror). Version = `KIT_VERSION`-Konstante
+Dual-Forge-Push (Forgejo kanonisch + GitHub-Mirror). Version = `KIT_VERSION`-Konstante
 (`src/pure/index.ts`) + git-Tag; jeder Tag bekommt einen `CHANGELOG.md`-Eintrag.
 
 ## Memory

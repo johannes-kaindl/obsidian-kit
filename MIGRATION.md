@@ -2,7 +2,7 @@
 
 Pro Modul ein Rezept, wie ein Plugin von seiner Inline-/Copy-Paste-Version auf das Kit umsteigt. Reihenfolge der Plugin-Migration (Spec §9): **image-to-markdown zuerst**, dann **vault-rag** (beide hielten die Duplikate → sie validieren die Entdopplung), danach opportunistisch presentation/kuro/json_viewer.
 
-Voraussetzung: git-Dependency gepinnt (`"obsidian-kit": "git+https://codeberg.org/jkaindl/obsidian-kit.git#<tag>"`).
+Voraussetzung: git-Dependency gepinnt (`"obsidian-kit": "git+https://git.jkaindl.de/jkaindl/obsidian-kit.git#<tag>"`).
 
 ---
 

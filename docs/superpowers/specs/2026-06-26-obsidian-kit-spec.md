@@ -152,7 +152,7 @@ Jeder bestehende `import { t } from "./i18n"` bleibt **unverändert** funktionsf
 **git-Dependency, raw `.ts`:**
 ```jsonc
 // konsumierendes Plugin package.json
-"obsidian-kit": "git+https://codeberg.org/jkaindl/obsidian-kit.git#0.1.0"
+"obsidian-kit": "git+https://git.jkaindl.de/jkaindl/obsidian-kit.git#0.1.0"
 ```
 - **Kein `prepare`/Build** — npm zieht den Source. Das Plugin-esbuild **inlined** die `.ts` direkt (esbuild kompiliert TS nativ). Die pure-Schicht hat keinen obsidian-Import; `external: ["obsidian","electron"]` bleibt unberührt.
 - **Typecheck im Konsumenten:** `tsc --noEmit` mit `moduleResolution: "Bundler"` löst die `exports`-Map auf die `.ts` auf und typecheckt direkt gegen Source. Kein `allowImportingTsExtensions` nötig (das Import-Specifier trägt keine Extension; die exports-Map resolved).

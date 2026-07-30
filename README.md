@@ -23,7 +23,7 @@ Drei Subpfade, über die `exports`-Map auf **rohe `.ts`** (kein Build-Schritt):
 ```jsonc
 // package.json des Plugins
 "dependencies": {
-  "obsidian-kit": "git+https://codeberg.org/jkaindl/obsidian-kit.git#0.1.0"
+  "obsidian-kit": "git+https://git.jkaindl.de/jkaindl/obsidian-kit.git#0.1.0"
 }
 ```
 
@@ -72,7 +72,7 @@ Jedes Modul trägt sein TSDoc am Source — bei der raw-`.ts`-Verteilung erschei
 ## Versionierung & Release
 
 - **SemVer ohne v-Präfix** (`0.1.0`). Konsumenten pinnen einen Tag; ein Kit-Bump wird pro Plugin bewusst nachgezogen (es gibt **keinen** geteilten Runtime — Versions-Skew ist kein Laufzeitproblem).
-- **Dual-Forge:** Tags werden im Lockstep nach **Codeberg (primär)** und **GitHub (Mirror)** gepusht (identische SHA). Fällt Codeberg aus, ist der GitHub-Mirror-Tag bit-identisch.
+- **Dual-Forge:** Tags werden im Lockstep nach **Forgejo (primär)** und **GitHub (Mirror)** gepusht (identische SHA). Fällt Forgejo aus, ist der GitHub-Mirror-Tag bit-identisch.
 - Release-Notes aus [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Entwicklung

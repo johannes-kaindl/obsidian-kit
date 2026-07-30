@@ -36,5 +36,5 @@ Wenn das Gate nicht klar erfüllt ist: **nicht** aufnehmen. Plausible-aber-falsc
 
 ## 6. Release
 
-- SemVer-Tag ohne v-Präfix; dual-forge im Lockstep pushen (Codeberg + GitHub, identische SHA).
+- SemVer-Tag ohne v-Präfix; dual-forge im Lockstep pushen (Forgejo + GitHub, identische SHA).
 - Migrierte Plugins ziehen den neuen Pin bei Gelegenheit nach.
