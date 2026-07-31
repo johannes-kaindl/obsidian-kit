@@ -12,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "check:index-strict": "tsc --noEmit --strict --noUncheckedIndexedAccess --target ES2022 --module esnext --moduleResolution bundler src/pure/frontmatter.ts",
+    "check:index-strict": "tsc --noEmit --strict --noUncheckedIndexedAccess --target ES2022 --module esnext --moduleResolution bundler src/pure/frontmatter.ts src/pure/endpoint.ts src/pure/i18n.ts src/pure/settings.ts",
     "test": "node scripts/check-no-abs-paths.mjs && node scripts/check-no-nul-bytes.mjs && npm run check:index-strict && vitest run",
     "lint": "eslint src tests"
   },

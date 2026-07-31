@@ -143,3 +143,30 @@ describe("Quoting-Negativfälle (Regressionsschutz)", () => {
     expect(out).toContain("b: C:\\pfad\\datei");
   });
 });
+
+describe("serializeFrontmatter — weitere Vertragspunkte (gegen local-image-generator abgeglichen)", () => {
+  it("emittiert einen leeren Skalar bar (key: ohne Wert)", () => {
+    expect(serializeFrontmatter({ a: "" }, ["a"])).toBe("---\na:\n---\n");
+  });
+
+  it("emittiert eine leere Liste als leere Flow-Liste ([])", () => {
+    expect(serializeFrontmatter({ tags: [] }, ["tags"])).toBe("---\ntags: []\n---\n");
+  });
+
+  it("überspringt einen Key aus order, der nicht in data steht", () => {
+    expect(serializeFrontmatter({ a: "x" }, ["a", "fehlt"])).toBe("---\na: x\n---\n");
+  });
+
+  it("quotet wegen ': ' UND escaped die im Wert enthaltenen Anführungszeichen — im Unterschied zum Negativfall oben, wo Quotes allein nicht quoten", () => {
+    // ": " löst needsQuoting aus (nicht die Anführungszeichen selbst); erst dadurch greift
+    // das Escaping in quoteScalar. Widerspricht nicht dem Negativtest: dort fehlt ein
+    // eigenständiger Quoting-Grund, hier liefert der Doppelpunkt genau den.
+    expect(serializeFrontmatter({ a: 'Titel: "Zitat"' }, ["a"])).toBe('---\na: "Titel: \\"Zitat\\""\n---\n');
+  });
+
+  it("lässt einen ISO-Zeitstempel bar (kein Quoting-Trigger)", () => {
+    expect(serializeFrontmatter({ created: "2026-07-16T21:52:43" }, ["created"])).toBe(
+      "---\ncreated: 2026-07-16T21:52:43\n---\n"
+    );
+  });
+});
