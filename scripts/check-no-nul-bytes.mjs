@@ -10,13 +10,25 @@ import { readFileSync } from "node:fs";
 
 const TEXT_EXT = /\.(ts|js|mjs|md|json|css|yml)$/;
 
-const files = execFileSync("git", ["ls-files"], { encoding: "utf8" })
-  .split("\n")
-  .filter((f) => f && TEXT_EXT.test(f));
+let files;
+try {
+  files = execFileSync("git", ["ls-files"], { encoding: "utf8" })
+    .split("\n")
+    .filter((f) => f && TEXT_EXT.test(f));
+} catch (err) {
+  console.error(`check-no-nul-bytes: git ls-files schlug fehl: ${err.message}`);
+  process.exit(2);
+}
 
 const hits = [];
 for (const file of files) {
-  const buf = readFileSync(file);
+  let buf;
+  try {
+    buf = readFileSync(file);
+  } catch (err) {
+    console.error(`check-no-nul-bytes: ${file} nicht lesbar: ${err.message}`);
+    process.exit(2);
+  }
   const at = buf.indexOf(0);
   if (at !== -1) hits.push(`${file}: NUL-Byte an Offset ${at}`);
 }
