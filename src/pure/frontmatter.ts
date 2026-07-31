@@ -85,7 +85,7 @@ function splitComment(rest: string): { value: string; comment: string } {
     if (inD && c === "\\" && i + 1 < rest.length) { i++; continue; }
     if (c === '"' && !inS) inD = !inD;
     else if (c === "'" && !inD) inS = !inS;
-    else if (c === "#" && !inS && !inD && (i === 0 || /\s/.test(rest[i - 1]!))) {
+    else if (c === "#" && !inS && !inD && (i === 0 || /\s/.test(rest[i - 1] ?? ""))) {
       return { value: rest.slice(0, i).trimEnd(), comment: rest.slice(i + 1).trim() };
     }
   }
@@ -104,11 +104,11 @@ export function parseFrontmatter(text: string, opts?: { comments?: boolean }): P
   const lines = block.split(/\r?\n/);
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i]!;
+    const line = lines[i] ?? "";
     const kv = /^([A-Za-z0-9_][\w .-]*?):[ \t]*(.*)$/.exec(line);
     if (!kv) { i++; continue; }
-    const key = kv[1]!.trim();
-    let rest = kv[2]!;
+    const key = (kv[1] ?? "").trim();
+    let rest = kv[2] ?? "";
     if (extractComments) {
       const split = splitComment(rest);
       rest = split.value;
@@ -124,8 +124,8 @@ export function parseFrontmatter(text: string, opts?: { comments?: boolean }): P
       // block list: following "- item" lines
       const items: string[] = [];
       let j = i + 1;
-      while (j < lines.length && /^[ \t]*-[ \t]+/.test(lines[j]!)) {
-        items.push(unquote(lines[j]!.replace(/^[ \t]*-[ \t]+/, "")));
+      while (j < lines.length && /^[ \t]*-[ \t]+/.test(lines[j] ?? "")) {
+        items.push(unquote((lines[j] ?? "").replace(/^[ \t]*-[ \t]+/, "")));
         j++;
       }
       if (items.length > 0) { data[key] = items; order.push(key); i = j; continue; }
@@ -184,8 +184,9 @@ function serializeValue(v: FmValue): string {
 export function serializeFrontmatter(data: Record<string, FmValue>, order: string[]): string {
   const lines: string[] = ["---"];
   for (const key of order) {
-    if (!(key in data)) continue;
-    const ser = serializeValue(data[key]!);
+    const v = data[key];
+    if (v === undefined) continue;
+    const ser = serializeValue(v);
     lines.push(ser === "" ? `${key}:` : `${key}: ${ser}`);
   }
   lines.push("---");
