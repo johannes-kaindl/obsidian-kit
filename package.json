@@ -12,7 +12,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/check-no-abs-paths.mjs && vitest run",
+    "check:index-strict": "tsc --noEmit --strict --noUncheckedIndexedAccess --target ES2022 --module esnext --moduleResolution bundler src/pure/frontmatter.ts",
+    "test": "node scripts/check-no-abs-paths.mjs && node scripts/check-no-nul-bytes.mjs && npm run check:index-strict && vitest run",
     "lint": "eslint src tests"
   },
   "devDependencies": {
