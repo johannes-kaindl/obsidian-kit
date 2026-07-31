@@ -53,6 +53,7 @@ export * from "obsidian-kit/testing";
 | `resolveActiveEndpoint` | `resolveActiveEndpoint(endpoints, ping) → Promise<string\|null>` | — |
 | `parseEndpointList` | `parseEndpointList(text) → string[]` (Textarea → geordnete, getrimmte, deduplizierte Liste) | — |
 | `clampInt` | `clampInt(value: string\|number, min, max, fallback) → number` | — |
+| `frontmatter` | `parseFrontmatter(text, {comments?}) → {data, order, body, comments?}` · `serializeFrontmatter(data, order) → string` · `valueEquals(a, b) → boolean` · `assertParseable(fm)` | — |
 | i18n | `pickLang` · `setLang` · `getLang` · `defineStrings({en,de})` · `t(key, ...args)` | **PROF-OBS-07** |
 | `createObsidianMock` | `createObsidianMock(overrides?) → MockStubs` | PROF-OBS-08 |
 | `collapsibleSection` | `collapsibleSection(containerEl, {title, defaultCollapsed?, key?, storage?}) → HTMLElement` (Body-Container; startet eingeklappt) | — |

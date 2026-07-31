@@ -2,6 +2,33 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.19.0 — pure: YAML-Frontmatter-Serializer (yaml_lite)
+
+### `obsidian-kit/pure`
+- **`frontmatter`** (neu, exportiert) — `parseFrontmatter` · `serializeFrontmatter` ·
+  `valueEquals` · `assertParseable`, dazu `FmValue`/`ParsedFrontmatter`. Gehoben aus
+  `vault-rag/src/frontmatter.ts`; die smart-apply-Domäne (`mergeFrontmatter`/
+  `diffFrontmatter`) bleibt dort. Quoting-Regeln für Wikilinks, `: `, `#`, führende
+  YAML-Sigils, Emoji-Codepoints, `true/false/null/yes/no/on/off/~` und zahl-aussehende
+  Strings; Kommas werden gequotet, weil sie sonst den Inline-List-Tokenizer spalten.
+- **Typ-Asymmetrie (load-bearing):** `FmValue` kennt `number` und emittiert ihn bar
+  (`seed: 199801046`) — der Parser liefert dagegen immer Strings, yaml_lite macht keine
+  Typinferenz. `valueEquals` normalisiert Skalare deshalb über `String(v)`.
+- **Nicht-Verhalten (Regressionsschutz):** Anführungszeichen und Backslashes *mitten* im
+  Wert lösen **kein** Quoting aus — gültiger Plain-Scalar, per Negativ-Test fixiert.
+- Die Datei ist gegen `noUncheckedIndexedAccess` gehärtet (local-image-generator
+  compiliert damit) und wird per `check:index-strict` in `npm test` daran gemessen.
+
+### Gates
+- **`check-no-nul-bytes.mjs`** (neu, in `npm test`) — NUL-Bytes machen eine Datei für
+  grep/git-grep binär; die Kit-first-Suche läuft dann an ihr vorbei. Genau das war beim
+  Original der Fall (vier NULs in `assertParseable`), beim Heben beseitigt.
+
+### Sonstiges
+- `KIT_VERSION` von `0.17.1` auf `0.19.0` nachgezogen (Lag aus dem 0.18.0-Release).
+
+Consumer-Rollout (im Anschluss): vault-rag, local-image-generator.
+
 ## 0.18.0 — obsidian: FolderSuggest (Ordner-Autocomplete)
 
 ### `obsidian-kit/obsidian`
