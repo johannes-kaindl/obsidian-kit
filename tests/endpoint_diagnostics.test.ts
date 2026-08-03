@@ -33,6 +33,27 @@ describe("classifyEndpointStatus", () => {
   });
 });
 
+describe("classifyEndpointStatus — Auth", () => {
+  it("401 → unauthorized mit handlungsleitendem Klartext", () => {
+    const s = classifyEndpointStatus({ kind: "response", status: 401, body: { error: "no key" } });
+    expect(s.kind).toBe("unauthorized");
+    expect(s.reachable).toBe(false);
+    expect(s.klartext).toContain("Schlüssel");
+  });
+
+  it("403 → unauthorized (Schlüssel da, aber ohne Recht)", () => {
+    expect(classifyEndpointStatus({ kind: "response", status: 403, body: {} }).kind).toBe("unauthorized");
+  });
+
+  it("Regression: 200 ohne data-Array bleibt not-an-llm-api", () => {
+    expect(classifyEndpointStatus({ kind: "response", status: 200, body: { hello: 1 } }).kind).toBe("not-an-llm-api");
+  });
+
+  it("Regression: 404 bleibt not-an-llm-api", () => {
+    expect(classifyEndpointStatus({ kind: "response", status: 404, body: {} }).kind).toBe("not-an-llm-api");
+  });
+});
+
 describe("ENDPOINT_PRESETS", () => {
   it("enthält LM Studio (:1234) und Ollama (:11434) als Base-URLs ohne /v1", () => {
     const byLabel = Object.fromEntries(ENDPOINT_PRESETS.map(p => [p.label, p.url]));
