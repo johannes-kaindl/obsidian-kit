@@ -26,3 +26,14 @@ describe('layoutDocument — image', () => {
     expect(im.h / im.w).toBeCloseTo(0.5, 3);
   });
 });
+
+// Schutz gegen einen Fehler, der beim Zusammenführen von Renderer- und Lookahead-Mathematik
+// entstehen kann: leitet man die Breite als hPt/ratio ab, ergibt ein Bild mit hPx 0 ein NaN.
+it('survives a degenerate image without producing NaN geometry', () => {
+  const r = layoutDocument([{ type: 'image', data: new Uint8Array([1]), wPx: 100, hPx: 0 }], opts());
+  const img = r.ops.find(o => o.kind === 'image') as Extract<DrawOp, { kind: 'image' }>;
+  expect(img).toBeDefined();
+  expect(Number.isFinite(img.w)).toBe(true);
+  expect(Number.isFinite(img.h)).toBe(true);
+  expect(Number.isFinite(img.y)).toBe(true);
+});

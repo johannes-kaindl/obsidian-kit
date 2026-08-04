@@ -23,6 +23,37 @@ describe('pagination — pagebreak + keep-together', () => {
     const bottomYpt = 20 * 2.8346456693;
     expect(img.y).toBeGreaterThanOrEqual(bottomYpt - 0.5);
   });
+  // Regression 2026-08-04 (Paperize-Geräteabnahme): der Waisenschutz maß per
+  // `measureFirstLines` nur n *Textzeilen* des Folgeblocks. Ein Bild ist aber atomar — es
+  // wanderte komplett auf die nächste Seite, während die Überschrift mit einem Drittel leerer
+  // Seite darunter zurückblieb.
+  it('keeps a heading with the image that follows it', () => {
+    const doc: Block[] = [
+      ...fill(55),
+      { type: 'heading', level: 2, inlines: [{ text: 'Abschnitt' }] },
+      { type: 'image', data: new Uint8Array([1]), wPx: 1600, hPx: 900 },
+    ];
+    const r = layoutDocument(doc, opts());
+    const head = r.ops.find(o => o.kind === 'text' && o.str === 'Abschnitt') as Extract<DrawOp,{kind:'text'}>;
+    const img = r.ops.find(o => o.kind === 'image') as Extract<DrawOp,{kind:'image'}>;
+    expect(head).toBeDefined();
+    expect(img).toBeDefined();
+    expect(head.page).toBe(img.page);
+  });
+
+  it('does not strand a heading before an image even without keep-together', () => {
+    const o = opts(); o.pagination.keepImagesTogether = false;
+    const doc: Block[] = [
+      ...fill(55),
+      { type: 'heading', level: 2, inlines: [{ text: 'Abschnitt' }] },
+      { type: 'image', data: new Uint8Array([1]), wPx: 1600, hPx: 900 },
+    ];
+    const r = layoutDocument(doc, o);
+    const head = r.ops.find(op => op.kind === 'text' && op.str === 'Abschnitt') as Extract<DrawOp,{kind:'text'}>;
+    const img = r.ops.find(op => op.kind === 'image') as Extract<DrawOp,{kind:'image'}>;
+    expect(head.page).toBe(img.page);
+  });
+
   it('keepImagesTogether off → old behaviour still produces a valid image op', () => {
     const o = opts(); o.pagination.keepImagesTogether = false;
     const r = layoutDocument([{ type: 'image', data: new Uint8Array([1]), wPx: 100, hPx: 50 }], o);

@@ -129,3 +129,70 @@ describe('resolveImages', () => {
     expect(blocks[0]).toMatchObject({ type: 'unsupported' });
   });
 });
+
+// Regression 2026-08-04 (Paperize-Geräteabnahme): grafisch gerenderte Elemente — MathJax,
+// Mermaid & Co. — tragen keinen Textknoten. Der Fallback-Zweig prüfte nur `textContent`,
+// also verschwanden sie **spurlos und ungezählt**: kein Block, kein Platzhalter, und weil
+// der Zähler bei 0 blieb, auch keine Sammel-Notice. Stiller Verlust ist schlimmer als
+// sichtbare Vereinfachung — dem PDF sah man nicht an, dass etwas fehlte.
+describe('domToIrSync — grafisch gerenderte Elemente', () => {
+  const mathBlock = '<div class="math math-block"><mjx-container><svg><g></g></svg></mjx-container></div>';
+
+  it('turns a block-level formula into a counted unsupported block', () => {
+    const { blocks, unsupportedCount } = domToIrSync(dom(mathBlock));
+    expect(unsupportedCount).toBe(1);
+    expect(blocks[0]).toMatchObject({ type: 'unsupported' });
+  });
+
+  it('leaves a visible placeholder where an inline formula was', () => {
+    const { blocks, unsupportedCount } = domToIrSync(
+      dom('<p>Energie <span class="math math-inline"><mjx-container><svg></svg></mjx-container></span> pro Masse</p>'),
+    );
+    const p = blocks[0] as ParagraphBlock;
+    expect(p.type).toBe('paragraph');
+    const text = p.inlines.map((r: Inline) => r.text).join('');
+    expect(text).toContain('Energie');
+    expect(text).toContain('pro Masse');
+    expect(text).toMatch(/\[.+\]/); // irgendein sichtbarer Platzhalter dazwischen
+    expect(unsupportedCount).toBe(1);
+  });
+
+  it('counts a bare svg that carries no text', () => {
+    const { unsupportedCount } = domToIrSync(dom('<figure><svg><circle /></svg></figure>'));
+    expect(unsupportedCount).toBe(1);
+  });
+
+  it('still ignores empty layout wrappers', () => {
+    const { blocks, unsupportedCount } = domToIrSync(dom('<div></div><div><span></span></div>'));
+    expect(unsupportedCount).toBe(0);
+    expect(blocks).toHaveLength(0);
+  });
+});
+
+// Regression 2026-08-04: `- [ ]` und `- [x]` rendern als optisch gleiche Bullets — im PDF
+// war „erledigt" nicht mehr von „offen" zu unterscheiden. Kein Datenverlust wie bei den
+// Formeln, aber Bedeutungsverlust.
+describe('domToIrSync — Aufgabenlisten', () => {
+  const taskList =
+    '<ul class="contains-task-list">' +
+    '<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> offen</li>' +
+    '<li class="task-list-item is-checked" data-task="x"><input type="checkbox" checked class="task-list-item-checkbox"> erledigt</li>' +
+    '</ul>';
+
+  it('keeps the checkbox state visible', () => {
+    const { blocks } = domToIrSync(dom(taskList));
+    const list = blocks[0] as ListBlock;
+    const first = list.items[0].inlines.map((r: Inline) => r.text).join('');
+    const second = list.items[1].inlines.map((r: Inline) => r.text).join('');
+    expect(first).toMatch(/^\[ \]/);
+    expect(second).toMatch(/^\[x\]/i);
+    expect(first).toContain('offen');
+    expect(second).toContain('erledigt');
+  });
+
+  it('leaves ordinary list items untouched', () => {
+    const { blocks } = domToIrSync(dom('<ul><li>normal</li></ul>'));
+    const list = blocks[0] as ListBlock;
+    expect(list.items[0].inlines.map((r: Inline) => r.text).join('')).toBe('normal');
+  });
+});

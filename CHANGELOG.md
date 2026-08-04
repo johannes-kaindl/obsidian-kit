@@ -2,6 +2,37 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.22.0 — pdf: stiller Verlust bei grafischen Elementen behoben, Waisenschutz vor Bildern
+
+Gefunden bei der Geräte-Abnahme von Paperize (2026-08-04) — alle drei Punkte waren in
+`0.17.0`–`0.21.0` unverändert vorhanden.
+
+### `obsidian-kit/pure/pdf`
+- **`dom-to-ir`: grafisch gerenderte Elemente verschwanden spurlos.** MathJax, Mermaid und
+  nacktes SVG tragen **keinen Textknoten**; der Fallback-Zweig prüfte aber nur `textContent`.
+  Folge: kein Block, kein Platzhalter — **und** der `unsupportedCount` blieb bei 0, womit auch
+  die Sammel-Notice des Hosts stumm blieb. Dem PDF sah man nicht an, dass etwas fehlte.
+  Neu: `graphicPlaceholder()` erkennt solche Elemente an ihrem grafischen Inhalt
+  (`svg`/`canvas`/`mjx-container`/`math` bzw. `class="math"`) und erzeugt `[Formel]` respektive
+  `[Grafik]` — als Block **und** als Inline-Run mitten im Absatz. Leere Layout-Wrapper bleiben
+  bewusst ungezählt (Regressionstest hält das fest).
+- **`dom-to-ir`: Aufgabenlisten verloren ihren Zustand.** `- [ ]` und `- [x]` rendern als
+  optisch identische Bullets; „erledigt" war im PDF nicht mehr erkennbar. Neu stellt
+  `taskMarker()` `[ ] ` bzw. `[x] ` voran (erkannt über `input[type=checkbox]`, `is-checked`
+  oder `data-task`); die Checkbox selbst wird nicht mehr als Run mitgeschleift.
+- **`layout`: Überschriften blieben vor einem Bild allein am Seitenende zurück.** Der
+  Waisenschutz maß per `measureFirstLines` *n Textzeilen* des Folgeblocks — bei einem Bild
+  eine sinnlose Größe, denn ein Bild ist **atomar**. Die Überschrift passte neben zwei
+  gedachten Textzeilen, dann wanderte das ganze Bild auf die nächste Seite und ließ sie über
+  einem Drittel leerer Seite zurück. Jetzt zählt die volle Bildhöhe. Tabellen und Codeblöcke
+  behalten die Zeilen-Näherung bewusst: sie **können** brechen, dort ist ein Teil-Fit ein
+  echter Fit.
+- **`layout`: `imageSizePt()` als gemeinsame Quelle** für Renderer und Waisen-Vorausschau —
+  vorher stand die Bildmathematik nur im Render-Zweig und hätte von der Vorausschau
+  wegdriften können. Die Funktion liefert Breite **und** Höhe; würde man die Breite
+  nachträglich als `hPt/ratio` ableiten, ergäbe ein entartetes Bild (`hPx: 0`) NaN-Geometrie
+  (eigener Regressionstest).
+
 ## 0.21.0 — pure: Capability-Erkennung (Vision + Thinking)
 
 ### `obsidian-kit/pure`
