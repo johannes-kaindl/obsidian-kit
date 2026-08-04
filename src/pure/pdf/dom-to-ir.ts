@@ -168,6 +168,12 @@ export function domToIrSync(
       if (isText(c)) { const t = (c.textContent || '').trim(); if (t) blocks.push({ type: 'paragraph', inlines: [{ text: t }] }); continue; }
       if (!isElem(c)) continue;
       const el = c as Element;
+      // Skip decorative chrome wholesale rather than descending into it. Obsidian's export
+      // path renders a callout icon as a bare `<svg width="16" height="16">` with no class
+      // and no aria-hidden — only its *container* is recognisable, so checking the element
+      // alone let the naked SVG through one level down. The text guard keeps an element that
+      // merely happens to be called "icon-legend" from swallowing its own content.
+      if (isDecorative(el) && !(el.textContent || '').trim()) continue;
       const nm = nameOf(el);
       if (/^H[1-6]$/.test(nm)) blocks.push({ type: 'heading', level: Number(nm[1]) as 1, inlines: inlinesOf(el, gstats) });
       else if (nm === 'P') {

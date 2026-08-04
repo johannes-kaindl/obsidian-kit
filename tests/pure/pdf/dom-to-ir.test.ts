@@ -190,6 +190,25 @@ describe('domToIrSync — grafisch gerenderte Elemente', () => {
     expect(unsupportedCount).toBe(1);
   });
 
+  // Das Export-DOM ist NICHT das Preview-DOM: in Obsidians detached Container fuellt
+  // `setIcon` das Callout-Icon nicht, es bleibt `<svg width="16" height="16">` — ohne
+  // Klasse, ohne aria-hidden. Der erste Icon-Fix pruefte nur das Element selbst und stieg
+  // dann in den dekorativen Container hinein, wo genau dieses nackte SVG als „[Grafik]"
+  // landete. Gemessen am echten Export 2026-08-04, nicht am Preview.
+  it('skips a decorative container completely, including bare svg inside it', () => {
+    const { blocks, unsupportedCount } = domToIrSync(
+      dom('<div class="callout"><div class="callout-title"><div class="callout-icon"><svg width="16" height="16"></svg></div><div class="callout-title-inner">Hinweis</div></div><div class="callout-content"><p>Inhalt</p></div></div>'),
+    );
+    expect(unsupportedCount).toBe(0);
+    expect(JSON.stringify(blocks)).not.toContain('[Grafik]');
+    expect(JSON.stringify(blocks)).toContain('Hinweis');
+  });
+
+  it('does not swallow text that sits in an icon-named element', () => {
+    const { blocks } = domToIrSync(dom('<div class="icon-legend">Legende</div>'));
+    expect(JSON.stringify(blocks)).toContain('Legende');
+  });
+
   it('still ignores empty layout wrappers', () => {
     const { blocks, unsupportedCount } = domToIrSync(dom('<div></div><div><span></span></div>'));
     expect(unsupportedCount).toBe(0);

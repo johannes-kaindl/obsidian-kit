@@ -20,7 +20,12 @@ Gefunden bei der Geräte-Abnahme von Paperize (2026-08-04) — alle drei Punkte 
   `[Grafik]` — Rauschen an einer Stelle, an der nichts fehlte (aufgefallen im echten Export,
   nicht im Test). `isDecorative()` erkennt es an `aria-hidden="true"` bzw. `icon` im
   Klassennamen; beides trägt über Renderer hinweg. Ein echtes Diagramm neben einem Icon wird
-  weiterhin gemeldet.
+  weiterhin gemeldet. **Dekoratives wird ganz übersprungen, nicht nur selbst ignoriert:** In
+  Obsidians Export-Pfad (detached Container) füllt `setIcon` das Callout-Icon nicht — dort
+  steht ein nacktes `<svg width="16" height="16">` **ohne Klasse und ohne aria-hidden**.
+  Erkennbar ist nur der Container; prüfte man allein das Element, rutschte das SVG eine Ebene
+  tiefer wieder durch. Nur textlose Container werden übersprungen, damit ein
+  `class="icon-legend"` seinen eigenen Inhalt behält.
 - **`dom-to-ir`: Aufgabenlisten verloren ihren Zustand.** `- [ ]` und `- [x]` rendern als
   optisch identische Bullets; „erledigt" war im PDF nicht mehr erkennbar. Neu stellt
   `taskMarker()` `[ ] ` bzw. `[x] ` voran (erkannt über `input[type=checkbox]`, `is-checked`
