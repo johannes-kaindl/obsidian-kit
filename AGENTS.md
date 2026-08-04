@@ -30,6 +30,24 @@ der Plugins greift hier strukturell nicht. Verteilung: SemVer-Tag **ohne `v`-Pr�
 Dual-Forge-Push (Forgejo kanonisch + GitHub-Mirror). Version = `KIT_VERSION`-Konstante
 (`src/pure/index.ts`) + git-Tag; jeder Tag bekommt einen `CHANGELOG.md`-Eintrag.
 
+**Den Tag explizit pushen — `--follow-tags` trägt hier nicht.** Die Kit-Tags sind
+**leichtgewichtig** (`git tag <version>`, prüfbar mit `git cat-file -t 0.20.0` → `commit`),
+und `--follow-tags` überträgt ausschließlich *annotated* Tags. Der Branch geht dann durch,
+der Tag bleibt still liegen — passiert beim 0.21.0-Release am 2026-08-04. Also:
+
+```bash
+git push origin main && git push origin <version>
+git push github main && git push github <version>
+git ls-remote --tags origin <version>   # gegen die echte Gegenstelle verifizieren
+```
+
+Die Plugin-Repos sind davon **nicht** betroffen: deren `release.mjs` legt mit `git tag -a`
+annotierte Tags an, dort ist `--follow-tags` korrekt.
+
+`KIT_VERSION` ist seit 0.21.0 per Test gegen `package.json` verriegelt
+(`tests/kit-version.test.ts`) — die Konstante war zuvor **zweimal in Folge** beim
+Release-Bump vergessen worden (0.18.0 und 0.20.0).
+
 ## Memory
 
 - **SDD-Artefakte (seit 2026-07-16): Cockpit, nicht Repo** — Specs/Plans/Task-Reports leben im
