@@ -11,6 +11,11 @@ export { clampInt } from "./num";
 export { mergeSettings } from "./settings";
 export { type Lang, pickLang, setLang, getLang, defineStrings, t } from "./i18n";
 export { type ThinkingSupport, suppressParams, reasoningHappened, isAlwaysOnThinker } from "./reasoning";
+export {
+  type Confidence, type ThinkingState, type Capabilities, type CapabilityFetch,
+  guessFromName, parseOllamaShow, parseLmStudioV1, parseLmStudioV0,
+  mergeCapability, resolveCapabilities, fetchCapabilities,
+} from "./capabilities";
 export { type ModelContext, parseLmStudioContext, parseOllamaContext } from "./model-context";
 export {
   type FmValue, type ParsedFrontmatter,
@@ -23,4 +28,4 @@ export {
 } from "./pdf";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
-export const KIT_VERSION = "0.19.0";
+export const KIT_VERSION = "0.21.0";

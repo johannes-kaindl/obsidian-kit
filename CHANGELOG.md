@@ -2,6 +2,45 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.21.0 — pure: Capability-Erkennung (Vision + Thinking)
+
+### `obsidian-kit/pure`
+- **`capabilities`** (neu, exportiert) — `guessFromName` · `parseOllamaShow` ·
+  `parseLmStudioV1` · `parseLmStudioV0` · `mergeCapability` · `resolveCapabilities` ·
+  `fetchCapabilities`, dazu `Confidence`/`ThinkingState`/`Capabilities`/`CapabilityFetch`.
+  Verbatim gehoben aus `vault-rag/src/capabilities.ts`; `image-to-markdown` hielt davon
+  einen vision-only-Fork mit **byte-gleichen Heuristik-Listen** — genau die Duplikation,
+  die bei jeder neuen Modellfamilie unbemerkt driftet.
+- **Einzige API-Änderung: der Fetcher wird injiziert.** `fetchCapabilities(fetchJson, baseUrl, model)`
+  statt eines importierten `httpJson`. `CapabilityFetch` liefert `{ json } | null` —
+  der Wrapper ist load-bearing, weil `unknown | null` in TypeScript zu `unknown`
+  kollabiert und den Vertrag „null = fehlgeschlagen" nicht ausdrücken könnte. Die beiden
+  Konsumenten reichen unterschiedliche HTTP-Formen durch (`{ok,status,text}` vs.
+  `{status,json}`); das Kit lernt keine davon.
+- **`try`/`catch` bleibt pro Versuch** — ein werfender Adapter darf die Sequenz
+  Ollama → LM Studio v1 → v0 nicht abbrechen. Per Test fixiert.
+- **Auth ist bewusst nicht im Kit.** vault-rag setzt auf seine Proben `authHeaders(apiKey)`;
+  das Kit-Modul kennt weder Schlüssel noch Header-Namen. Mit dem injizierten Fetcher gehört
+  dieses Wissen in den Adapter des Konsumenten, der die Header in `req.headers` hineinmerged
+  — sonst müsste das Kit jedes Auth-Schema seiner Konsumenten lernen.
+- **`findById` bewusst nicht geteilt** mit `pure/model-context.ts` (5 Zeilen, dort
+  gleichnamig): Vendoring ist datei-granular; ein gemeinsames Helfer-Modul zwänge jeden
+  `model-context`-Konsumenten, ab sofort zwei Dateien zu vendoren.
+
+### Gates
+- **`tests/kit-version.test.ts`** (neu) — verriegelt `KIT_VERSION` gegen
+  `package.json#version`. Der Lag war **zweimal in Folge** aufgetreten (0.18.0 und
+  0.20.0 zogen die Konstante nicht nach); ein Wert, der zweimal still divergiert,
+  braucht eine Verriegelung statt einer dritten Handkorrektur.
+- `capabilities.ts` steht **nicht** in `check:index-strict`: die Datei selbst ist unter
+  `--noUncheckedIndexedAccess` sauber, ihr `reasoning.ts`-Import zöge aber einen dort
+  bestehenden Fehler mit.
+
+### Sonstiges
+- `KIT_VERSION` von `0.19.0` auf `0.21.0` nachgezogen (Lag aus dem 0.20.0-Release).
+
+Consumer-Rollout (im Anschluss): image-to-markdown; vault-rag als Folgeschritt.
+
 ## 0.19.0 — pure: YAML-Frontmatter-Serializer (yaml_lite)
 
 ### `obsidian-kit/pure`
