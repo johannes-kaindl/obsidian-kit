@@ -16,6 +16,11 @@ Gefunden bei der Geräte-Abnahme von Paperize (2026-08-04) — alle drei Punkte 
   (`svg`/`canvas`/`mjx-container`/`math` bzw. `class="math"`) und erzeugt `[Formel]` respektive
   `[Grafik]` — als Block **und** als Inline-Run mitten im Absatz. Leere Layout-Wrapper bleiben
   bewusst ungezählt (Regressionstest hält das fest).
+- **Dekoratives Beiwerk zählt nicht mit.** Der erste Wurf meldete Obsidians Callout-Icon als
+  `[Grafik]` — Rauschen an einer Stelle, an der nichts fehlte (aufgefallen im echten Export,
+  nicht im Test). `isDecorative()` erkennt es an `aria-hidden="true"` bzw. `icon` im
+  Klassennamen; beides trägt über Renderer hinweg. Ein echtes Diagramm neben einem Icon wird
+  weiterhin gemeldet.
 - **`dom-to-ir`: Aufgabenlisten verloren ihren Zustand.** `- [ ]` und `- [x]` rendern als
   optisch identische Bullets; „erledigt" war im PDF nicht mehr erkennbar. Neu stellt
   `taskMarker()` `[ ] ` bzw. `[x] ` voran (erkannt über `input[type=checkbox]`, `is-checked`

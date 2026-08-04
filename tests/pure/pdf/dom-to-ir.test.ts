@@ -162,6 +162,34 @@ describe('domToIrSync — grafisch gerenderte Elemente', () => {
     expect(unsupportedCount).toBe(1);
   });
 
+  // Dekoratives Beiwerk ist kein Inhaltsverlust: Obsidians Callout-Titel traegt ein
+  // Lucide-Icon, das nach dem ersten Fix als „[Grafik]" im PDF landete und den Zaehler
+  // hochtrieb — Rauschen an einer Stelle, an der nichts fehlte (echter Export 2026-08-04).
+  // Erkannt wird es an denselben zwei Merkmalen, die Icons ueberall tragen: `aria-hidden`
+  // (W3C-Konvention fuer „rein dekorativ") und `icon` im Klassennamen.
+  it('ignores decorative icons marked aria-hidden', () => {
+    const { blocks, unsupportedCount } = domToIrSync(
+      dom('<div class="callout"><div class="callout-title"><div class="callout-icon"><svg aria-hidden="true"><path /></svg></div><div class="callout-title-inner">Achtung</div></div><div class="callout-content"><p>Inhalt</p></div></div>'),
+    );
+    expect(unsupportedCount).toBe(0);
+    const texts = blocks.map((b) => JSON.stringify(b)).join(' ');
+    expect(texts).not.toContain('[Grafik]');
+    expect(texts).toContain('Achtung');
+    expect(texts).toContain('Inhalt');
+  });
+
+  it('ignores icons recognised by their class name alone', () => {
+    const { unsupportedCount } = domToIrSync(dom('<div class="callout-icon"><svg class="svg-icon lucide-info"></svg></div>'));
+    expect(unsupportedCount).toBe(0);
+  });
+
+  it('still reports a real graphic that merely sits next to an icon', () => {
+    const { unsupportedCount } = domToIrSync(
+      dom('<div><div class="clickable-icon"><svg aria-hidden="true"></svg></div><div class="diagram"><svg><rect /></svg></div></div>'),
+    );
+    expect(unsupportedCount).toBe(1);
+  });
+
   it('still ignores empty layout wrappers', () => {
     const { blocks, unsupportedCount } = domToIrSync(dom('<div></div><div><span></span></div>'));
     expect(unsupportedCount).toBe(0);

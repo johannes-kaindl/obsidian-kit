@@ -12,16 +12,26 @@ const isMathEl = (el: Element) => {
   return nm === 'MJX-CONTAINER' || nm === 'MATH' || hasClass(el, 'math');
 };
 
+// Chrome, not content: a callout's Lucide icon is decoration and reporting it as a lost
+// graphic is noise where nothing is missing. Two markers carry across renderers — `aria-hidden`
+// (the W3C way to say "purely decorative") and `icon` in the class name.
+const isDecorative = (el: Element): boolean =>
+  el.getAttribute('aria-hidden') === 'true' || /(^|[\s-])icon([\s-]|$)/.test(el.getAttribute('class') || '');
+
 // Graphically rendered elements — MathJax, Mermaid, bare SVG — carry no text node at all.
 // Checking only `textContent` let them vanish without a trace *and* without incrementing the
 // counter, so the host's summary notice stayed silent too. Silent loss is worse than visible
 // simplification: the PDF gave no hint that anything was missing. Returns the placeholder to
-// show in the PDF, or null when the element is just an empty layout wrapper.
+// show in the PDF, or null when the element is just an empty layout wrapper or decoration.
 function graphicPlaceholder(el: Element): string | null {
   if ((el.textContent || '').trim()) return null;
+  if (isDecorative(el)) return null;
   const nm = nameOf(el);
   const self = nm === 'SVG' || nm === 'CANVAS' || isMathEl(el);
-  if (!self && !el.querySelector('svg, canvas, mjx-container, math')) return null;
+  const inner = el.querySelector('svg, canvas, mjx-container, math');
+  if (!self && !inner) return null;
+  // A wrapper whose only graphic is a decorative icon is decorative itself.
+  if (!self && inner && isDecorative(inner)) return null;
   return isMathEl(el) || el.querySelector('mjx-container, math') ? '[Formel]' : '[Grafik]';
 }
 
