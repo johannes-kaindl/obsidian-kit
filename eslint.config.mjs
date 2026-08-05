@@ -21,12 +21,25 @@ export default tseslint.config(
     },
   },
   {
+    // Ein absichtlich ungenutzter Parameter heisst `_evt` — das ist die Konvention, nicht
+    // eine Ausnahme des Test-Layers. Galt bis 2026-08-05 nur fuer src/testing/, weshalb
+    // src/obsidian/folder-suggest.ts als einzige Produktivdatei rot war.
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
+  },
+  {
     // Test-Fixture: ein Obsidian-Double ist inhärent lose typisiert (es bildet eine
     // any-lastige Runtime-API nach). Diese type-checked-Regeln sind hier untauglich;
     // file-scoped gelockert (PROF-OBS-08 erlaubt das mit Begründung, statt Inline-disables).
-    files: ["src/testing/**/*.ts"],
+    //
+    // Seit 2026-08-05 gilt die Lockerung auch fuer `tests/**`: wer das Double konsumiert,
+    // erbt zwangslaeufig dessen `any`. Vorher standen dort 64 unsafe-*-Fehler, die sich nur
+    // durch Casts auf erfundene Typen haetten stillstellen lassen — die haetten Sicherheit
+    // vorgetaeuscht, wo die Runtime-API keine hat. `no-explicit-any` bleibt in `tests/`
+    // bewusst AN: das Double konsumieren ist erlaubt, selbst `any` hinschreiben nicht.
+    files: ["src/testing/**/*.ts", "tests/**/*.ts"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",
@@ -34,7 +47,10 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/prefer-promise-reject-errors": "off",
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
+  },
+  {
+    files: ["src/testing/**/*.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
 );

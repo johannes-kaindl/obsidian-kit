@@ -3,28 +3,59 @@ import { makeFakeApp, Modal, ButtonComponent } from "../src/testing/obsidian-moc
 import { confirmAction } from "../src/obsidian/confirm";
 import type { ConfirmOptions } from "../src/obsidian/confirm";
 
+// makeFakeEl() liefert ein bewusst lose typisiertes Element-Double; das hier ist der
+// Ausschnitt, den dieser Test davon anfasst. Ein vollstaendiger Typ waere erfunden —
+// die nachgebildete Runtime-API hat ihn nicht.
+interface FakeEl {
+  className: string;
+  tagName: string;
+  textContent: string;
+  children: FakeEl[];
+  __component?: ButtonComponent;
+}
+// Bewusst KEINE Intersection mit Modal: dessen contentEl ist `any`, und `any & FakeEl`
+// bleibt `any` — die Callback-Parameter unten waeren wieder implizit untypisiert.
+interface OpenModal {
+  contentEl: FakeEl;
+  titleEl: FakeEl;
+  close(): void;
+  onClose(): void;
+}
+
+// Der Klick-Handler ist am Mock nullable. Ein `?.()` wuerde bei fehlendem Handler still
+// nichts tun und der Test schluege erst spaeter und unklar fehl.
+function click(b: ButtonComponent): void {
+  expect(b.clickCB).toBeTruthy();
+  b.clickCB?.();
+}
+
 // confirmAction erzeugt sein Modal intern — Modal.__last ist der Zugriffsweg,
 // analog FuzzySuggestModal.__instance. Die Buttons liegen in einem
 // modal-button-container-Div in contentEl; [0]=Cancel, [1]=Confirm (UI-STANDARD §2).
-function openConfirm(opts: ConfirmOptions): { p: Promise<boolean>; modal: any; confirm: any; cancel: any } {
+function openConfirm(opts: ConfirmOptions): {
+  p: Promise<boolean>;
+  modal: OpenModal;
+  confirm: ButtonComponent;
+  cancel: ButtonComponent;
+} {
   const p = confirmAction(makeFakeApp() as never, opts);
-  const modal: any = Modal.__last;
-  const container = modal.contentEl.children.find((c: any) => c.className === "modal-button-container");
+  const modal = Modal.__last as unknown as OpenModal;
+  const container = modal.contentEl.children.find((c) => c.className === "modal-button-container");
   expect(container).toBeTruthy();
-  const [cancel, confirm] = container.children.map((c: any) => c.__component);
+  const [cancel, confirm] = (container as FakeEl).children.map((c) => c.__component as ButtonComponent);
   return { p, modal, confirm, cancel };
 }
 
 describe("confirmAction", () => {
   it("resolved true bei Confirm-Klick", async () => {
     const { p, confirm } = openConfirm({ message: "Wirklich?" });
-    confirm.clickCB();
+    click(confirm);
     await expect(p).resolves.toBe(true);
   });
 
   it("resolved false bei Cancel-Klick", async () => {
     const { p, cancel } = openConfirm({ message: "Wirklich?" });
-    cancel.clickCB();
+    click(cancel);
     await expect(p).resolves.toBe(false);
   });
 
@@ -36,7 +67,7 @@ describe("confirmAction", () => {
 
   it("löst genau einmal auf: Klick + nachlaufendes onClose ändern nichts (finish-Guard)", async () => {
     const { p, modal, confirm } = openConfirm({ message: "Wirklich?" });
-    confirm.clickCB();       // finish(true) → close() → onClose() → finish(false) muss am Guard abprallen
+    click(confirm);       // finish(true) → close() → onClose() → finish(false) muss am Guard abprallen
     modal.onClose();         // zusätzliches nachlaufendes onClose (wie im echten Close-Ablauf)
     await expect(p).resolves.toBe(true);
   });
@@ -50,8 +81,8 @@ describe("confirmAction", () => {
 
   it("rendert message-Array als einen <p> pro Zeile", () => {
     const { modal } = openConfirm({ message: ["Zeile 1", "Zeile 2"] });
-    const ps = modal.contentEl.children.filter((c: any) => c.tagName === "P");
-    expect(ps.map((c: any) => c.textContent)).toEqual(["Zeile 1", "Zeile 2"]);
+    const ps = modal.contentEl.children.filter((c) => c.tagName === "P");
+    expect(ps.map((c) => c.textContent)).toEqual(["Zeile 1", "Zeile 2"]);
   });
 
   it("Label-Defaults sind Confirm/Cancel, injizierte Labels gewinnen", () => {
@@ -63,18 +94,17 @@ describe("confirmAction", () => {
     expect(k2.textValue).toBe("Abbrechen");
   });
 
-  // Der openConfirm-Helper liefert das Modal-Innere untypisiert (any) — für die Button-
-  // Assertions auf den Mock-Typ zurückholen statt unsafe-member-access zu erzeugen.
-  const btn = (c: unknown): ButtonComponent => c as ButtonComponent;
+  // buttonEl ist am Mock `any` — fuer die eine Klassen-Assertion unten auf den
+  // tatsaechlich genutzten Ausschnitt zurueckholen.
   const classNameOf = (b: ButtonComponent): string => (b.buttonEl as { className: string }).className;
 
   it("warning defaultet auf destruktiv; warning:false nutzt setCta", () => {
     const { confirm } = openConfirm({ message: "m" });
-    expect(btn(confirm).destructiveSet).toBe(true);
-    expect(btn(confirm).ctaSet).toBe(false);
+    expect(confirm.destructiveSet).toBe(true);
+    expect(confirm.ctaSet).toBe(false);
     const { confirm: c2 } = openConfirm({ message: "m", warning: false });
-    expect(btn(c2).ctaSet).toBe(true);
-    expect(btn(c2).destructiveSet).toBe(false);
+    expect(c2.ctaSet).toBe(true);
+    expect(c2.destructiveSet).toBe(false);
   });
 
   // setWarning() ist ab Obsidian 1.13 deprecated, setDestructive() gibt es erst ab 1.13 —
@@ -82,8 +112,8 @@ describe("confirmAction", () => {
   // eines harten Aufrufs (Muster: vault-rag/src/settings.ts → applyDestructive).
   it("nutzt setDestructive, wenn die API vorhanden ist (Obsidian >= 1.13)", () => {
     const { confirm } = openConfirm({ message: "m" });
-    expect(btn(confirm).destructiveSet).toBe(true);
-    expect(btn(confirm).warningSet).toBe(false);
+    expect(confirm.destructiveSet).toBe(true);
+    expect(confirm.warningSet).toBe(false);
   });
 
   it("faellt auf die mod-warning-Klasse zurueck, wenn setDestructive fehlt (< 1.13)", () => {
@@ -92,8 +122,8 @@ describe("confirmAction", () => {
     delete proto.setDestructive;
     try {
       const { confirm } = openConfirm({ message: "m" });
-      expect(btn(confirm).destructiveSet).toBe(false);
-      expect(classNameOf(btn(confirm))).toContain("mod-warning");
+      expect(confirm.destructiveSet).toBe(false);
+      expect(classNameOf(confirm)).toContain("mod-warning");
     } finally {
       proto.setDestructive = orig;
     }
