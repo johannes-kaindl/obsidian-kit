@@ -52,6 +52,7 @@ export * from "obsidian-kit/testing";
 | `normalizeEndpoint` | `normalizeEndpoint(s) → string` | — |
 | `resolveActiveEndpoint` | `resolveActiveEndpoint(endpoints, ping) → Promise<string\|null>` | — |
 | `parseEndpointList` | `parseEndpointList(text) → string[]` (Textarea → geordnete, getrimmte, deduplizierte Liste) | — |
+| `endpoint_config` (seit v0.23.0) | `EndpointConfig { url, apiKey?, model? }` · `authHeaders(apiKey?) → Record<string,string>` · `effectiveModel(cfg, globalModel) → string` · `carriesApiKey(cfg) → boolean` · `migrateEndpointList(single?, list?) → EndpointConfig[]` · `applyEndpointEdit(eps, index, field, value, isAdder) → EndpointConfig[]` · `moveEndpointToFront(eps, index) → EndpointConfig[]` (die Liste IST die Priorität) · `resolveActiveEndpointConfig(eps, ping) → Promise<EndpointConfig\|null>` · `endpointRole(input) → EndpointRole` (sprachfrei — Text baut der Consumer) | — |
 | `clampInt` | `clampInt(value: string\|number, min, max, fallback) → number` | — |
 | `frontmatter` | `parseFrontmatter(text, {comments?}) → {data, order, body, comments?}` · `serializeFrontmatter(data, order) → string` · `valueEquals(a, b) → boolean` · `assertParseable(fm)` (Typ-Asymmetrie: `number` wird bar emittiert, `parseFrontmatter` liefert immer Strings — `valueEquals` normalisiert; Quotes/Backslashes *mitten* im Wert lösen KEIN Quoting aus) | — |
 | i18n | `pickLang` · `setLang` · `getLang` · `defineStrings({en,de})` · `t(key, ...args)` | **PROF-OBS-07** |
