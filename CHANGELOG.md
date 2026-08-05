@@ -2,19 +2,17 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
-## [0.23.0] — 2026-08-05
+## 0.23.0 — pure: Endpunkt-Konfiguration mit API-Schlüssel je Zeile
 
-### Added
-- **`pure/endpoint_config.ts`** — Endpunkt-Einträge mit eigenem API-Schlüssel je Zeile
-  (`EndpointConfig { url, apiKey?, model? }`), `authHeaders`, `effectiveModel`,
+### `obsidian-kit/pure`
+- **`endpoint_config`** (neu, exportiert) — Endpunkt-Einträge mit eigenem API-Schlüssel je
+  Zeile (`EndpointConfig { url, apiKey?, model? }`), `authHeaders`, `effectiveModel`,
   `carriesApiKey`, `migrateEndpointList` (alte String-Listen), `applyEndpointEdit`,
   `moveEndpointToFront` (die Liste IST die Priorität) sowie `endpointRole` als sprachfreie
   Ableitung für die Zeilen-Anzeige. Damit lässt sich EINE Fallback-Liste aus lokalen und
   gehosteten Anbietern mischen. Herkunft: `vault-rag` 0.19.0/0.20.0.
 - **`resolveActiveEndpointConfig(eps, ping)`** — liefert den ganzen Eintrag statt nur der URL
   und reicht ihn dem `ping` durch, damit der Schlüssel die Erreichbarkeitsprobe erreicht.
-
-### Notes
 - `pure/endpoint.ts` bleibt unverändert. Wer nur URL-Listen braucht, ändert nichts.
 - Den Anzeigetext einer `EndpointRole` baut der Consumer — die Rolle ist bewusst sprachfrei,
   damit zweisprachige Plugins sie durch ihr eigenes `t()` führen.
