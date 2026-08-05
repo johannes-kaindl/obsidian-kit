@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { authHeaders, effectiveModel, migrateEndpointList, applyEndpointEdit, carriesApiKey, moveEndpointToFront, endpointRole, type EndpointConfig } from "../src/pure/endpoint_config";
+import { authHeaders, effectiveModel, migrateEndpointList, applyEndpointEdit, carriesApiKey, moveEndpointToFront, endpointRole, resolveActiveEndpointConfig, type EndpointConfig } from "../src/pure/endpoint_config";
 
 describe("authHeaders", () => {
   it("ohne Schlüssel → keine Header", () => {
@@ -138,5 +138,54 @@ describe("endpointRole", () => {
 
   it("erreichbar und passend, aber nicht aktiv → wartet auf seinem Platz", () => {
     expect(endpointRole({ ...base, position: 3 })).toEqual({ kind: "standby", position: 3 });
+  });
+});
+
+describe("resolveActiveEndpointConfig", () => {
+  const local: EndpointConfig = { url: "http://localhost:1234" };
+  const hosted: EndpointConfig = { url: "https://openrouter.ai/api", apiKey: "sk-x" };
+
+  it("liefert den GANZEN Eintrag, nicht nur die URL", async () => {
+    // Sonst müsste der Aufrufer den Schlüssel des Gewinners hinterher aus der Liste
+    // zurücksuchen — genau die Stelle, an der er verloren geht.
+    const out = await resolveActiveEndpointConfig([local, hosted], async (c) => c.url.includes("openrouter"));
+    expect(out).toEqual({ url: "https://openrouter.ai/api", apiKey: "sk-x" });
+  });
+
+  it("reicht den Schlüssel an den ping durch", async () => {
+    // DER Test dieses Vorhabens: fehlt der Schlüssel an der Probe, gilt ein gehosteter
+    // Endpunkt nie als erreichbar und wird stillschweigend übersprungen — das Feature
+    // wirkt tot, ohne jede Fehlermeldung.
+    const seen: (string | undefined)[] = [];
+    await resolveActiveEndpointConfig([hosted], async (c) => { seen.push(c.apiKey); return true; });
+    expect(seen).toEqual(["sk-x"]);
+  });
+
+  it("normalisiert die URL je Eintrag", async () => {
+    const out = await resolveActiveEndpointConfig([{ url: "http://h:1234/v1/" }], async () => true);
+    expect(out?.url).toBe("http://h:1234");
+  });
+
+  it("überspringt leere und whitespace-URLs", async () => {
+    const tried: string[] = [];
+    const out = await resolveActiveEndpointConfig(
+      [{ url: "" }, { url: "   " }, local],
+      async (c) => { tried.push(c.url); return true; },
+    );
+    expect(tried).toEqual(["http://localhost:1234"]);
+    expect(out).toEqual(local);
+  });
+
+  it("null, wenn keiner erreichbar ist", async () => {
+    expect(await resolveActiveEndpointConfig([local, hosted], async () => false)).toBeNull();
+  });
+
+  it("nimmt den ERSTEN erreichbaren — die Liste ist die Priorität", async () => {
+    const out = await resolveActiveEndpointConfig([local, hosted], async () => true);
+    expect(out).toEqual(local);
+  });
+
+  it("leere Liste → null, kein Fehler", async () => {
+    expect(await resolveActiveEndpointConfig([], async () => true)).toBeNull();
   });
 });

@@ -5,6 +5,8 @@
  *  `chatRequestModel` (hängt an vault-rags smartApplyModel) und `describeEndpointRole`
  *  (liefert deutschen Text — jeder Consumer rendert die Rolle in seiner Sprache). */
 
+import { normalizeEndpoint } from "./endpoint";
+
 export interface EndpointConfig {
   url: string;
   /** Leer/fehlend = kein Authorization-Header (lokaler Server). */
@@ -130,4 +132,29 @@ export function endpointRole(input: {
   if (!input.reachable) return { kind: "unreachable" };
   if (!input.modelFits) return { kind: "skipped-model" };
   return { kind: "standby", position: input.position };
+}
+
+/** Erster erreichbarer Eintrag aus einer geordneten Fallback-Liste, sonst `null`.
+ *
+ *  Gibt bewusst den GANZEN Eintrag zurück statt nur der URL, und reicht ihn auch dem
+ *  `ping` durch: der Schlüssel muss an die Probe. Fehlt er dort, gilt ein gehosteter
+ *  Endpunkt nie als erreichbar und wird stillschweigend übersprungen — das Feature wirkt
+ *  tot, ohne Fehlermeldung, weil ein reiner Ping-Fehlschlag nichts meldet.
+ *
+ *  Die URL wird je Eintrag normalisiert (trailing `/v1` und Slashes); der zurückgegebene
+ *  Eintrag trägt die normalisierte Form, damit der Aufrufer sie nicht erneut anfassen muss.
+ *
+ *  Macht EINEN Durchlauf. Caching, Re-Resolve und Retry bleiben beim Aufrufer — wie beim
+ *  String-Pendant `resolveActiveEndpoint` in `endpoint.ts`. */
+export async function resolveActiveEndpointConfig(
+  eps: EndpointConfig[],
+  ping: (cfg: EndpointConfig) => Promise<boolean>,
+): Promise<EndpointConfig | null> {
+  for (const raw of eps) {
+    const url = raw?.url?.trim();
+    if (!url) continue;
+    const cfg: EndpointConfig = { ...raw, url: normalizeEndpoint(url) };
+    if (await ping(cfg)) return cfg;
+  }
+  return null;
 }
