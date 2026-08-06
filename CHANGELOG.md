@@ -2,6 +2,10 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.25.0
+
+- Neues Modul `obsidian-kit/obsidian`: `renderSettingDefinitions`/`settingBodyHost`/`refreshSettingsTab` — der gemeinsame Fallback-Walker für zweigleisige deklarative Settings-Tabs, gehoben aus 9 unabhängigen Repo-Kopien (REGISTRY „Zweigleisige deklarative Settings — eine-Wahrheit-Walker").
+
 ## 0.24.0 — pure: Modell-Liste lesen, Wartezeit begrenzen
 
 Beide Module kommen aus dem `drift-audit` vom 2026-08-06 und sind **gemessen uniform**, nicht
