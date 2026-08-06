@@ -12,8 +12,10 @@ export {
   classifyEndpointStatus,
   type EndpointPreset, ENDPOINT_PRESETS,
   type EndpointWarning, validateEndpointInput,
+  extractModelIds,
 } from "./endpoint_diagnostics";
 export { clampInt } from "./num";
+export { type TimeoutTimers, type TimeoutResult, withTimeout } from "./timeout";
 export { mergeSettings } from "./settings";
 export { type Lang, pickLang, setLang, getLang, defineStrings, t } from "./i18n";
 export { type ThinkingSupport, suppressParams, reasoningHappened, isAlwaysOnThinker } from "./reasoning";
@@ -34,4 +36,4 @@ export {
 } from "./pdf";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
-export const KIT_VERSION = "0.23.0";
+export const KIT_VERSION = "0.24.0";

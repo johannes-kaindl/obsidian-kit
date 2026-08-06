@@ -2,6 +2,46 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.24.0 — pure: Modell-Liste lesen, Wartezeit begrenzen
+
+Beide Module kommen aus dem `drift-audit` vom 2026-08-06 und sind **gemessen uniform**, nicht
+geschätzt: die Consumer-Implementierungen wurden nebeneinander gelesen, nicht gezählt.
+
+### `obsidian-kit/pure`
+- **`extractModelIds(body) → string[]`** (neu, in `endpoint_diagnostics`) — zieht die Modell-ids
+  aus der Antwort von `GET /v1/models` (OpenAI-kompatible Form `{ data: [{ id }] }`). Tolerant
+  gegen alles, was ein Endpunkt statt JSON liefern kann: HTML-Fehlerseiten, `null`, fehlendes
+  `data`, Einträge ohne `id`. Wirft nie. Extrahiert aus **drei** Repos mit identischer Semantik
+  (koda-agent `core/llm/probe.ts`, vim-dojo `llm/modelList.ts`, obsidian-transmute
+  `core/llm/client.ts`) — die Unterschiede waren Quote-Stil und Zeilenumbrüche.
+- **`withTimeout(work, ms, timers)`** (neu, Modul `timeout`) — begrenzt die Wartezeit auf ein
+  Promise. Motivation: Obsidians `requestUrl` kennt **weder Timeout noch Abort**; fünf Repos
+  bauen denselben `Promise.race`-Wrapper (koda-agent, vault-rag, yijing-oracle, vim-dojo,
+  obsidian-transmute), zwei davon mit fast wörtlich gleichem Begründungskommentar.
+  Drei Dinge macht die Kit-Fassung bewusst anders als die Vorlagen:
+  1. **Der Timer wird in `finally` geräumt** — auch auf dem Fehlerpfad. Mindestens eine
+     Consumer-Kopie (vim-dojo `llm/endpointProbe.ts`) räumt ihn nicht; bei einem Timeout von
+     drei Minuten läuft dort nach jeder erfolgreichen Probe ein Timer minutenlang nach.
+  2. **Diskriminierte Union statt Sentinel-Wert.** Die Vorlagen verwenden `'timeout'` bzw.
+     `'__timeout__'` als Marker im Ergebnis — ein Nutzwert, der zufällig so heißt, wäre nicht
+     unterscheidbar. `{ timedOut: true }` kann nicht kollidieren.
+  3. **Fehler der Arbeit werden durchgereicht**, nicht als Timeout ausgegeben: der Aufrufer soll
+     „Server antwortete 500" von „Server antwortete gar nicht" unterscheiden können.
+
+  Der Timer-Port ist **injiziert** (`TimeoutTimers`, strukturell erfüllt von `ClockPort`/`realClock`).
+  Grund: vendorierter Kit-Code wird vom Lint des *Consumers* erfasst, und
+  `obsidianmd/prefer-window-timers` verlangt dort `window.setTimeout`. Die `window`-Bindung
+  bleibt damit in der obsidian-Schicht — der pure Kern bleibt node-testbar.
+
+  ⚠️ **Was `withTimeout` NICHT tut:** die Arbeit abbrechen. `requestUrl` bietet kein Abort;
+  die laufende Anfrage läuft im Hintergrund zu Ende, ihr Ergebnis verfällt nur.
+
+### Doku
+- README: `endpoint_diagnostics` fehlte bislang **ganz** in der Modul-Tabelle, obwohl es seit
+  0.5.0 existiert und in 8 Repos vendored ist. Für die Kit-first-Regel („vor dem Lösen erst
+  `obsidian-kit/README.md` prüfen") heißt eine fehlende Zeile: das Modul ist nicht auffindbar.
+  Nachgetragen.
+
 ## 0.23.0 — pure: Endpunkt-Konfiguration mit API-Schlüssel je Zeile
 
 ### `obsidian-kit/pure`

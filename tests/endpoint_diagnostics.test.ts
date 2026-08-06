@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyEndpointStatus, validateEndpointInput, ENDPOINT_PRESETS } from "../src/pure/endpoint_diagnostics";
+import { classifyEndpointStatus, validateEndpointInput, ENDPOINT_PRESETS, extractModelIds } from "../src/pure/endpoint_diagnostics";
 
 describe("classifyEndpointStatus", () => {
   it("ok: HTTP 200 mit {data:[…]}-Form ist erreichbar", () => {
@@ -84,5 +84,23 @@ describe("validateEndpointInput", () => {
     expect(validateEndpointInput("http://198.51.100.1:1234").map(w => w.rule)).toContain("placeholder-ip");
     expect(validateEndpointInput("http://203.0.113.7:1234").map(w => w.rule)).toContain("placeholder-ip");
     expect(validateEndpointInput("http://0.0.0.0:1234").map(w => w.rule)).toContain("placeholder-ip");
+  });
+});
+
+describe("extractModelIds", () => {
+  it("zieht die ids aus der OpenAI-kompatiblen {data:[{id}]}-Form", () => {
+    expect(extractModelIds({ data: [{ id: "qwen3-8b" }, { id: "llama-3.2" }] })).toEqual(["qwen3-8b", "llama-3.2"]);
+  });
+  it("leer, wenn data kein Array ist", () => {
+    expect(extractModelIds({ data: "nope" })).toEqual([]);
+    expect(extractModelIds({ foo: 1 })).toEqual([]);
+  });
+  it("leer bei null/undefined/nicht-Objekt (Body kam nicht als JSON zurueck)", () => {
+    expect(extractModelIds(null)).toEqual([]);
+    expect(extractModelIds(undefined)).toEqual([]);
+    expect(extractModelIds("<html>")).toEqual([]);
+  });
+  it("ueberspringt Eintraege ohne string-id statt zu werfen", () => {
+    expect(extractModelIds({ data: [{ id: "a" }, null, { id: 42 }, {}, { id: "b" }] })).toEqual(["a", "b"]);
   });
 });
