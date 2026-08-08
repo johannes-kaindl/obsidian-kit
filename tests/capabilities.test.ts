@@ -16,6 +16,14 @@ describe("guessFromName", () => {
     expect(guessFromName("gemma3:4b").vision).toBe("likely");
     expect(guessFromName("gemma3:1b").vision).toBe("no");
   });
+  it("erkennt Gemma auch in Bindestrich-Schreibweise (LM Studio)", () => {
+    expect(guessFromName("google/gemma-3-4b-it").vision).toBe("likely");
+    expect(guessFromName("google/gemma-3-1b-it").vision).toBe("no");
+  });
+  it("Gemma 4 ist Vision (multimodal, aktiv verifiziert 2026-08-07)", () => {
+    expect(guessFromName("google/gemma-4-31b-qat").vision).toBe("likely");
+    expect(guessFromName("gemma4:12b").vision).toBe("likely");
+  });
   it("glm-4 ohne v ist keine Vision, glm-4v schon", () => {
     expect(guessFromName("glm-4").vision).toBe("no");
     expect(guessFromName("glm-4v").vision).toBe("likely");
@@ -67,6 +75,10 @@ describe("parseLmStudioV1", () => {
   it("null wenn Modell fehlt", () => {
     expect(parseLmStudioV1({ data: [{ id: "andere" }] }, "m")).toBeNull();
   });
+  it("null statt Throw bei null/undefined JSON", () => {
+    expect(parseLmStudioV1(null, "m")).toBeNull();
+    expect(parseLmStudioV1(undefined, "m")).toBeNull();
+  });
 });
 
 describe("parseLmStudioV0", () => {
@@ -77,6 +89,10 @@ describe("parseLmStudioV0", () => {
   });
   it("type llm → keine Vision", () => {
     expect(parseLmStudioV0({ data: [{ id: "m", type: "llm" }] }, "m")?.vision).toBe("no");
+  });
+  it("null statt Throw bei null/undefined JSON", () => {
+    expect(parseLmStudioV0(null, "m")).toBeNull();
+    expect(parseLmStudioV0(undefined, "m")).toBeNull();
   });
 });
 

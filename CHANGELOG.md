@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.25.1 — pure/capabilities: Gemma-Erkennung + null-sicheres findModel
+
+- **Vision-Heuristik erkennt Gemma in beiden Schreibweisen und Gemma 4.** Der bisherige Ausdruck
+  `/gemma3/` matchte nur die Ollama-Form; LM Studio liefert `google/gemma-3-4b-it`, und für
+  `google/gemma-4-*` galt gar keine Regel. Beides meldete „keine Vision", obwohl die Modelle
+  multimodal sind — belegt am 2026-08-07 durch den *aktiven* Vision-Test in `image-to-markdown`
+  (Modell las das Token aus dem Testbild, die Anzeige sprang von „Keine Vision" auf „Vision").
+  Neu: `GEMMA_VISION = /gemma[-_]?[34]/`, Text-Ausnahme entsprechend als
+  `GEMMA_TEXT = /gemma[-_]?3[-_:]?(1b|270m)/` (Gemma 3 1b/270m bleiben text-only).
+- **`findModel` dereferenziert `json` nicht mehr ungeprüft.** `parseLmStudioV1`/`parseLmStudioV0`
+  warfen `TypeError: Cannot read properties of null` statt `null` zurückzugeben, wenn ein
+  Endpunkt `null` lieferte — `parseOllamaShow` hatte das Optional Chaining direkt darüber bereits.
+  Befund aus der 0.21.0-Extraktion: der alte `image-to-markdown`-Fork hatte es, das Kit verlor es.
+
 ## 0.25.0
 
 - Neues Modul `obsidian-kit/obsidian`: `renderSettingDefinitions`/`settingBodyHost`/`refreshSettingsTab` — der gemeinsame Fallback-Walker für zweigleisige deklarative Settings-Tabs, gehoben aus 9 unabhängigen Repo-Kopien (REGISTRY „Zweigleisige deklarative Settings — eine-Wahrheit-Walker").
