@@ -42,6 +42,16 @@ function fn(impl?: (...args: any[]) => any): MockFn {
 // className-string model (image-to-markdown / vault-rag) + additive
 // classList/classes/firstChild affordances (kuro-gamification).
 // ---------------------------------------------------------------------------
+/** Minimaler Selektor-Abgleich für `querySelectorAll` unten: Tag-Name (`input`) oder
+ *  einfache Klasse (`.foo`). Bewusst KEIN CSS-Parser — nur so viel, wie die Kit-Module
+ *  brauchen (die Endpunkt-Liste sperrt ihre Zeilen über `"input, button, select"`). */
+function matchesSimpleSelector(node: any, selector: string): boolean {
+  const s = selector.trim();
+  if (!s) return false;
+  if (s.startsWith(".")) return node?.hasClass?.(s.slice(1)) === true;
+  return String(node?.tagName ?? "").toLowerCase() === s.toLowerCase();
+}
+
 export function makeFakeEl(): any {
   const children: any[] = [];
   const attrs: Record<string, string> = {};
@@ -109,6 +119,22 @@ export function makeFakeEl(): any {
     removeAttribute: (k: string) => { delete attrs[k]; },
     setCssStyles: (s: Record<string, any>) => { Object.assign(style, s); },
     setCssProps: (s: Record<string, any>) => { Object.assign(style, s); },
+
+    /** Rekursive Nachfahren-Suche über kommagetrennte Tag-/Klassen-Selektoren.
+     *  Gibt ein Array zurück (nicht NodeList) — es trägt `forEach`, mehr braucht der
+     *  Aufrufer nicht. */
+    querySelectorAll: (selector: string) => {
+      const parts = String(selector ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+      const out: any[] = [];
+      const walk = (node: any): void => {
+        for (const c of node?.children ?? []) {
+          if (parts.some((p) => matchesSimpleSelector(c, p))) out.push(c);
+          walk(c);
+        }
+      };
+      walk(el);
+      return out;
+    },
 
     addEventListener: (event: string, cb: (...a: any[]) => void) => { (listeners[event] ??= []).push(cb); },
     removeEventListener: (event: string, cb: (...a: any[]) => void) => {
@@ -359,16 +385,27 @@ export class PluginSettingTab {
 export class Setting {
   static __last: Setting | null = null;
   settingEl: any;
+  /** Der Control-Teilbaum der Zeile (im echten Obsidian `.setting-item-control`).
+   *  Kit-Module zeichnen dort Zusatz-DOM neben die `add*`-Komponenten — die Endpunkt-Liste
+   *  etwa Status-Icon, Rollenzeile, Warn-/Drittanbieter-Icon und den Modell-Slot. */
+  controlEl: any;
   components: any[] = [];
   nameValue = "";
   descValue = "";
   constructor(public containerEl: any) {
     this.settingEl = containerEl?.createDiv ? containerEl.createDiv({ cls: "setting-item" }) : makeFakeEl();
     this.settingEl.__setting = this;
+    // Fallback für minimale Container-Doubles in Bestandstests (`{ createDiv: () => ({}) }`):
+    // deren settingEl kann selbst kein createDiv — controlEl bleibt dann losgelöst, statt zu werfen.
+    this.controlEl = this.settingEl?.createDiv
+      ? this.settingEl.createDiv({ cls: "setting-item-control" })
+      : makeFakeEl();
     Setting.__last = this;
   }
+  /** Wie im echten Obsidian landen die `add*`-Elemente in controlEl, nicht direkt in
+   *  settingEl — sonst stünde das Zusatz-DOM (controlEl) neben statt zwischen ihnen. */
   private attach(el: any): void {
-    if (el?.appendChild && this.settingEl?.appendChild) this.settingEl.appendChild(el);
+    if (el?.appendChild && this.controlEl?.appendChild) this.controlEl.appendChild(el);
   }
   setName(name: any): this { this.nameValue = String(name ?? ""); return this; }
   setDesc(desc: any): this { this.descValue = String(desc ?? ""); return this; }

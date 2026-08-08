@@ -55,6 +55,45 @@ describe("Mock-Erweiterung für Modal-Tests (confirm)", () => {
     const s = new Setting(makeFakeEl());
     expect(Setting.__last).toBe(s);
   });
+});
+
+describe("Mock-Erweiterung für die Endpunkt-Liste (controlEl + querySelectorAll)", () => {
+  it("Setting.controlEl haengt unter settingEl und traegt die add*-Komponenten", () => {
+    const s = new Setting(makeFakeEl());
+    expect(s.settingEl.children).toContain(s.controlEl);
+    expect(s.controlEl.hasClass("setting-item-control")).toBe(true);
+    s.addText((t) => t.setValue("hi"));
+    expect(s.controlEl.children).toContain(s.components[0].inputEl);
+    expect(s.settingEl.children).not.toContain(s.components[0].inputEl);
+  });
+  it("controlEl nimmt Zusatz-DOM neben den Komponenten auf", () => {
+    const s = new Setting(makeFakeEl());
+    const icon = s.controlEl.createSpan({ cls: "okit-ep-status" });
+    s.addText((t) => t.setValue("x"));
+    expect(s.controlEl.children).toEqual([icon, s.components[0].inputEl]);
+  });
+  it("querySelectorAll findet Nachfahren ueber kommagetrennte Tag-Selektoren", () => {
+    const root = makeFakeEl();
+    const wrap = root.createDiv();
+    const input = wrap.createEl("input");
+    const button = root.createEl("button");
+    root.createEl("span");
+    // Dokument-Reihenfolge (Pre-Order): das verschachtelte input steht vor dem button.
+    expect(root.querySelectorAll("input, button, select")).toEqual([input, button]);
+  });
+  it("querySelectorAll versteht einfache Klassenselektoren", () => {
+    const root = makeFakeEl();
+    const hit = root.createDiv({ cls: "okit-ep-row" });
+    hit.createDiv({ cls: "andere" });
+    const nested = hit.createDiv({ cls: "okit-ep-row tief" });
+    expect(root.querySelectorAll(".okit-ep-row")).toEqual([hit, nested]);
+    expect(root.querySelectorAll(".gibts-nicht")).toEqual([]);
+  });
+  it("querySelectorAll liefert bei leerem Selektor nichts und wirft nicht", () => {
+    const root = makeFakeEl();
+    root.createEl("input");
+    expect(root.querySelectorAll("")).toEqual([]);
+  });
   it("Modal.open()/close() rufen onOpen()/onClose(); __last zeigt auf die Instanz", () => {
     const calls: string[] = [];
     class M extends Modal {
