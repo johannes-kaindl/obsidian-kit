@@ -34,6 +34,11 @@ export {
   type Block, type Inline, type ListItem, type Cell, type Align, type Document,
   type LayoutOptions, type FontChoice, type Margins, type RunningHF, type DrawOp,
 } from "./pdf";
+export {
+  type ModelChoiceMode, type ModelHintKey, type ModelOption,
+  type ModelChoice, type ModelChoiceInput,
+  resolveModelChoice,
+} from "./model-choice";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
 export const KIT_VERSION = "0.25.1";
