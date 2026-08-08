@@ -9,3 +9,5 @@ export { renderSettingDefinitions, settingBodyHost, refreshSettingsTab } from ".
 export type { SettingControlHost } from "./settings_walker";
 export { renderModelPicker } from "./model-picker";
 export type { ModelPickerOptions } from "./model-picker";
+export { buildEndpointList, ENDPOINT_LIST_CSS } from "./endpoint-list";
+export type { EndpointListOptions, EndpointListStrings } from "./endpoint-list";
