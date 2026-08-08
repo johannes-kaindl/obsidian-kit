@@ -7,3 +7,5 @@ export type { ConfirmOptions } from "./confirm";
 export { FolderSuggest } from "./folder-suggest";
 export { renderSettingDefinitions, settingBodyHost, refreshSettingsTab } from "./settings_walker";
 export type { SettingControlHost } from "./settings_walker";
+export { renderModelPicker } from "./model-picker";
+export type { ModelPickerOptions } from "./model-picker";

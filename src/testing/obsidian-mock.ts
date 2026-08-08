@@ -548,6 +548,9 @@ export function setIcon(el: any, iconId: string): void {
   if (el.dataset) el.dataset.icon = iconId;
   el.setAttribute?.("data-icon", iconId);
 }
+export function setTooltip(el: any, tooltip: string): void {
+  el.setAttribute?.("data-tooltip", tooltip);
+}
 export function getLanguage(): string { return "en"; }
 export function normalizePath(path: string): string {
   const out = String(path)
@@ -684,6 +687,7 @@ export const defaultStubs = {
   Setting,
   TFile,
   setIcon,
+  setTooltip,
   App,
   // common (3/5)
   ItemView,
