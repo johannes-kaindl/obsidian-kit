@@ -55,6 +55,17 @@ describe("Mock-Erweiterung für Modal-Tests (confirm)", () => {
     const s = new Setting(makeFakeEl());
     expect(Setting.__last).toBe(s);
   });
+  it("Modal.open()/close() rufen onOpen()/onClose(); __last zeigt auf die Instanz", () => {
+    const calls: string[] = [];
+    class M extends Modal {
+      onOpen(): void { calls.push("open"); }
+      onClose(): void { calls.push("close"); }
+    }
+    const m = new M({});
+    expect(Modal.__last).toBe(m);
+    m.open(); m.close();
+    expect(calls).toEqual(["open", "close"]);
+  });
 });
 
 describe("Mock-Erweiterung für die Endpunkt-Liste (controlEl + querySelectorAll)", () => {
@@ -93,16 +104,5 @@ describe("Mock-Erweiterung für die Endpunkt-Liste (controlEl + querySelectorAll
     const root = makeFakeEl();
     root.createEl("input");
     expect(root.querySelectorAll("")).toEqual([]);
-  });
-  it("Modal.open()/close() rufen onOpen()/onClose(); __last zeigt auf die Instanz", () => {
-    const calls: string[] = [];
-    class M extends Modal {
-      onOpen(): void { calls.push("open"); }
-      onClose(): void { calls.push("close"); }
-    }
-    const m = new M({});
-    expect(Modal.__last).toBe(m);
-    m.open(); m.close();
-    expect(calls).toEqual(["open", "close"]);
   });
 });

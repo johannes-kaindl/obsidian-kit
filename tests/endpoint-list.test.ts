@@ -164,9 +164,9 @@ describe("buildEndpointList", () => {
     expect(h.order).toEqual(["save", "reconnect", "rerender"]);
   });
 
-  // Kein Umzug, sondern die einzige Verhaltens-ABWEICHUNG zur vault-rag-Vorlage: die
-  // Kit-Fassung von resolveModelChoice kennt kein allowEmpty/emptyLabel mehr, die
-  // Leer-Option traegt dort das sprachfreie "—". Beschriftet wird sie erst beim Zeichnen.
+  // Die Leer-Option selbst kommt wie in der Vorlage aus resolveModelChoice (`allowEmpty`);
+  // was das Kit NICHT mehr kennt, ist `emptyLabel` — die Option kommt sprachfrei mit leerem
+  // Label herein und wird erst beim Zeichnen beschriftet. Genau das prueft dieser Fall.
   it("beschriftet die Leer-Option des Modell-Dropdowns ueber emptyModelLabel", async () => {
     const h = harness([{ url: "http://a" }]);
     buildEndpointList(h.opts);
@@ -179,6 +179,27 @@ describe("buildEndpointList", () => {
     expect(dd).toBeDefined();
     expect(dd?.options).toEqual({ "": "global (g)", m1: "m1" });
     expect(dd?.getValue()).toBe("");
+  });
+
+  // Regression (gemeldet 2026-08-08): der Fall oben deckt nur `current === ""` ab und lief an
+  // dem Fehler vorbei. Traegt die Zeile ein Override und liefert der Endpunkt eine Liste, fehlte
+  // die Leer-Option ganz — das Override war ueber die Oberflaeche nicht mehr zuruecknehmbar.
+  it("bietet die Leer-Option auch dann an, wenn die Zeile schon ein Modell-Override traegt", async () => {
+    const h = harness([{ url: "http://a", model: "m1" }]);
+    buildEndpointList(h.opts);
+    await flush();
+
+    const entry = rowsOf(h.containerEl)[1];
+    const dd = entry.components.find(
+      (c: unknown): c is DropdownComponent => c instanceof DropdownComponent,
+    );
+    expect(dd).toBeDefined();
+    expect(dd?.options).toEqual({ "": "global (g)", m1: "m1" });
+    expect(dd?.getValue()).toBe("m1");
+    // Der Weg zurueck ist gangbar: die Leer-Option waehlen nimmt das Override zurueck.
+    dd?.onChangeCB?.("");
+    expect(h.current()).toEqual([{ url: "http://a" }]);
+    await flush();
   });
 
   it("laesst die UI nach einem gescheiterten Speichern nicht verriegelt zurueck", async () => {

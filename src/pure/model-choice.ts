@@ -30,6 +30,14 @@ export interface ModelChoiceInput {
   reachable: boolean;
   models: string[];
   current: string;
+  /** Ist der leere Wert bedeutungstragend? Dann steht die Leer-Option IMMER im Dropdown,
+   *  auch wenn bereits ein Wert gewählt ist. Genau das braucht ein Modell-Override je
+   *  Endpunkt-Zeile: ohne sie ließe sich ein einmal gesetztes Override über die Oberfläche
+   *  nicht mehr zurücknehmen — die Zeile könnte nie wieder auf das globale Modell
+   *  zurückfallen (Einbahnstraße, gemeldet 2026-08-08). Default `false`: wo "" nur
+   *  „nichts gewählt" heißt, bleibt es bei der bloßen Invarianten-Sicherung.
+   *  Das LABEL der Option setzt der Host — das Kit formuliert nicht. */
+  allowEmpty?: boolean;
 }
 
 /**
@@ -57,11 +65,15 @@ export function resolveModelChoice(input: ModelChoiceInput): ModelChoice {
   }
 
   const options: ModelOption[] = [];
+  // Unbedingt und als erste Option, wenn "" bedeutungstragend ist — der Weg zurück zum
+  // Default darf nicht davon abhängen, ob gerade schon etwas gewählt ist.
+  if (input.allowEmpty) options.push({ value: "", label: "" });
   if (current !== "" && !input.models.includes(current)) {
     // Gespeichert, aber nicht gelistet: sichtbar machen statt still verlieren.
     options.push({ value: current, label: current, suffix: "saved" });
-  } else if (current === "") {
-    // Ohne diese Option fiele das <select> stumm auf das erste Modell.
+  } else if (current === "" && !input.allowEmpty) {
+    // Ohne diese Option fiele das <select> stumm auf das erste Modell. Bei `allowEmpty`
+    // steht sie oben schon — hier nicht ein zweites Mal anlegen.
     options.push({ value: "", label: "—" });
   }
   for (const m of input.models) options.push({ value: m, label: m });

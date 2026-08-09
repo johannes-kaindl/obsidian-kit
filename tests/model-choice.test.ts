@@ -24,6 +24,38 @@ describe("resolveModelChoice", () => {
     expect(c.value).toBe("");
   });
 
+  it("haelt die Leer-Option mit allowEmpty auch bei gesetztem Wert offen", () => {
+    // Sonst waere ein Modell-Override je Endpunkt-Zeile eine Einbahnstrasse: einmal gesetzt,
+    // liesse es sich ueber die Oberflaeche nicht mehr auf das globale Modell zuruecknehmen.
+    const c = resolveModelChoice({ reachable: true, models: ["a", "b"], current: "a", allowEmpty: true });
+    expect(c.options.map((o) => o.value)).toEqual(["", "a", "b"]);
+    // Label bleibt leer — beschriftet wird erst beim Zeichnen (das Kit formuliert nicht).
+    expect(c.options[0]).toEqual({ value: "", label: "" });
+    expect(c.value).toBe("a");
+  });
+
+  it("legt mit allowEmpty bei leerem Wert KEINE zweite Leer-Option an", () => {
+    const c = resolveModelChoice({ reachable: true, models: ["a"], current: "", allowEmpty: true });
+    expect(c.options.map((o) => o.value)).toEqual(["", "a"]);
+  });
+
+  it("haelt einen nicht gelisteten Wert auch mit allowEmpty sichtbar", () => {
+    const c = resolveModelChoice({ reachable: true, models: ["a"], current: "alt", allowEmpty: true });
+    expect(c.options.map((o) => o.value)).toEqual(["", "alt", "a"]);
+    expect(c.options.find((o) => o.value === "alt")?.suffix).toBe("saved");
+  });
+
+  it("verhaelt sich ohne allowEmpty unveraendert (Default false)", () => {
+    // Regression gegen den Default: bestehende Aufrufer (u.a. koda-agent) duerfen keine
+    // zusaetzliche Leer-Option bekommen.
+    const gesetzt = resolveModelChoice({ reachable: true, models: ["a", "b"], current: "a" });
+    expect(gesetzt.options.map((o) => o.value)).toEqual(["a", "b"]);
+    const explizitAus = resolveModelChoice({ reachable: true, models: ["a", "b"], current: "a", allowEmpty: false });
+    expect(explizitAus.options).toEqual(gesetzt.options);
+    const leer = resolveModelChoice({ reachable: true, models: ["a"], current: "" });
+    expect(leer.options).toEqual([{ value: "", label: "—" }, { value: "a", label: "a" }]);
+  });
+
   it("sperrt die Auswahl bei nicht erreichbarem Endpunkt, behaelt aber den Wert", () => {
     const c = resolveModelChoice({ reachable: false, models: [], current: "gemerkt" });
     expect(c.mode).toBe("locked");

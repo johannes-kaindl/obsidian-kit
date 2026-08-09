@@ -217,10 +217,12 @@ export function buildEndpointList(opts: EndpointListOptions): void {
       const gen = opts.cache.generation();
       void opts.cache.load(listKey, opts.clientFor(cfg)).then(({ models, reachable }) => {
         if (gen !== opts.cache.generation()) return;   // Liste hat sich verschoben
-        // Die Kit-Fassung von resolveModelChoice kennt kein allowEmpty/emptyLabel: die
-        // Leer-Option entsteht automatisch, wenn `current === ""`, und trägt das sprachfreie
-        // Label „—". Beschriftet wird sie erst hier, beim Zeichnen.
-        const choice = resolveModelChoice({ reachable, models, current: cfg.model ?? "" });
+        // `allowEmpty: true` wie in der Vorlage — die Leer-Option muss auch dann im Dropdown
+        // stehen, wenn die Zeile bereits ein Override trägt, sonst ließe sich das Override
+        // über die Oberfläche nicht mehr zurücknehmen (Einbahnstraße). Die Kit-Fassung von
+        // resolveModelChoice kennt kein `emptyLabel`: die Option kommt sprachfrei mit leerem
+        // Label, beschriftet wird sie erst hier, beim Zeichnen.
+        const choice = resolveModelChoice({ reachable, models, current: cfg.model ?? "", allowEmpty: true });
         const labelled = {
           ...choice,
           options: choice.options.map(o =>

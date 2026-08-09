@@ -4,9 +4,10 @@ import { renderModelPicker } from "../src/obsidian/model-picker";
 import type { ModelChoice } from "../src/pure/model-choice";
 
 // Der Brief-Entwurf ging von einer `setting.controlEl`-Eigenschaft aus, die der Kit-Mock
-// nicht kennt (die Mock-`Setting`-Klasse hat nur `settingEl`/`containerEl`, keinen der
-// Unterknoten des echten `obsidian.Setting`). Der Mock haengt jede gezeichnete Komponente
-// stattdessen direkt an `Setting.components` (s. obsidian-mock.ts `addDropdown`/`addText`/
+// damals nicht kannte. Seit `f0a7e74` (Vorschritt zur Endpunkt-Liste) gibt es sie -- weitere
+// Unterknoten des echten `obsidian.Setting` (`infoEl`, `nameEl`, `descEl`) aber weiterhin
+// nicht. Fuer diesen Test aendert das nichts: der Mock haengt jede gezeichnete Komponente
+// zusaetzlich an `Setting.components` (s. obsidian-mock.ts `addDropdown`/`addText`/
 // `addExtraButton`) -- das ist der etablierte, zuverlaessige Zugriffspfad (vgl.
 // `tests/settings_walker.test.ts`, das denselben Weg ueber die DOM-`__component`-Marker
 // nimmt, wo kein direktes Array existiert). Deshalb liest `componentsOf` hier direkt das
