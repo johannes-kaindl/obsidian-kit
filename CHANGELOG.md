@@ -2,6 +2,24 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.26.0 — Endpunkt-Zeilen-Editor, Modell-Picker, Modell-Cache
+
+Kompletter Umzug des Endpunkt-Zeilen-Editors aus `vault-rag` ins Kit, in vier Tasks (Spec/Plan unter `.superpowers/sdd/2026-08-08-kit-endpunkt-liste/`). Additiv für `pure` und `obsidian`, keine Breaking Changes — `testing` hat **eine** strukturelle Änderung, die einen Test brechen kann (siehe unten).
+
+### `obsidian-kit/pure`
+- **`model-choice`** (neu) — `resolveModelChoice(input) → ModelChoice`: entscheidet, was ein Modell-Feld zeigen soll (Dropdown mit Liste / Freitext, wenn der Endpunkt keine Liste herausgibt / gesperrt, wenn er schweigt). Liefert i18n-**Schlüssel** (`hintKey`) und `suffix: "saved"` statt fertiger Sätze zurück — das Kit formuliert nicht.
+- **`allowEmpty`** (neu, optional, Default `false`) in `resolveModelChoice` — additive API-Erweiterung für Felder, in denen der leere Wert bedeutungstragend ist (Modell-Override je Endpunkt-Zeile: „leer" = „nimm das globale Modell"). Ohne die Option fehlte die Leer-Option im Dropdown, sobald schon ein Wert gewählt war — ein einmal gesetztes Override ließ sich über die Oberfläche nicht mehr zurücknehmen (Einbahnstraße, gemeldet 2026-08-08 während der Extraktion). Bestehende Aufrufer bleiben ohne Änderung kompatibel.
+- **`model-list-cache`** (neu) — `createModelListCache() → ModelListCache`: Modell-Listen je Endpunkt, ein Request pro Schlüssel (das Promise wird gecacht, nicht das Ergebnis), Probe nur bei leerer Liste, Generationszähler gegen verspätete Antworten. Instanz statt Singleton — gehört zur Lebensdauer eines Settings-Tabs. **Der Consumer muss `clear()` im `hide()` seines Settings-Tabs rufen** (der Cache überlebt den Tab-Neuaufbau bewusst); ohne den Aufruf bleibt ein einmal als „nicht erreichbar" gemessener Endpunkt für die restliche Sitzung so stehen.
+
+### `obsidian-kit/obsidian`
+- **`model-picker`** (neu) — `renderModelPicker(opts) → void`: zeichnet eine `ModelChoice` in eine bestehende `Setting`-Zeile, inklusive „Modelle abrufen"-Knopf in jedem Modus.
+- **`endpoint-list`** (neu) — `buildEndpointList(opts) → void`: der komplette Endpunkt-Zeilen-Editor (URL · Schlüssel · Modell-Override je Zeile, Adder-Zeile, Status-Icon, Rollenzeile, Drittanbieter-Hinweis, „zuerst verwenden", Entfernen, Preset-Knöpfe, „Verbindung prüfen"). Alle Texte kommen über `opts.strings` — das Kit formuliert nicht. Dazu die exportierte Konstante `ENDPOINT_LIST_CSS` (Präfix `okit-`), die der Consumer in seine `styles.css` übernimmt.
+
+### `obsidian-kit/testing`
+- Mock ergänzt: freie `setTooltip`-Funktion, `Setting.controlEl`, `querySelectorAll` am Fake-Element — Voraussetzung, um `buildEndpointList` gegen den Mock zu testen.
+- **Strukturell, nicht additiv:** `Setting.add*` hängt seine Komponenten jetzt in `controlEl` statt direkt in `settingEl` (wie der echte Obsidian). Tests, die `settingEl.children` **flach** durchsuchen, müssen eine Ebene tiefer gehen oder rekursiv laufen — der stabilere Weg bleibt `Setting.components` bzw. `querySelectorAll`. Kein anderer Teil des Kits ist betroffen; im Kit selbst brach kein Test.
+- Mock ehrlicher gemacht: Komponenten-Elemente tragen ihren echten `tagName` (`INPUT`/`TEXTAREA`/`SELECT`/`BUTTON`; Toggle und ExtraButton bleiben `DIV` wie im echten Obsidian), `ButtonComponent`/`ExtraButtonComponent` zeichnen `setTooltip`/`setIcon` auf (`tooltip`, `iconName`) statt sie zu verwerfen, und `remove()` hängt den Knoten wirklich beim Elternknoten aus. Damit sind `querySelectorAll("input, button, select")`, Tooltip-Texte an Icon-Knöpfen und in-place entferntes Zusatz-DOM überhaupt erst prüfbar. `appendChild` hängt weiterhin nur an und verschiebt **nicht** (dokumentierte Abweichung vom echten DOM — Aussagen über die Kinder-Reihenfolge sind nur dort belastbar, wo kein Knoten umgehängt wurde).
+
 ## 0.25.1 — pure/capabilities: Gemma-Erkennung + null-sicheres findModel
 
 - **Vision-Heuristik erkennt Gemma in beiden Schreibweisen und Gemma 4.** Der bisherige Ausdruck
