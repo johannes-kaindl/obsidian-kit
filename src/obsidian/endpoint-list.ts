@@ -23,10 +23,23 @@ export interface EndpointListStrings {
   addPlaceholder: string;
   apiKeyPlaceholder: string;
   modelPlaceholder: string;
+  /** `aria-label` der URL-Felder bestehender Einträge. Stehen MEHRERE Listen auf demselben
+   *  Settings-Tab (vault-rag: Chat und Embedding), braucht jede Liste ihren eigenen Text —
+   *  ein gemeinsam genutztes `strings`-Objekt gäbe allen URL-Feldern beider Listen dasselbe
+   *  Label, und ein Screenreader könnte sie nicht mehr auseinanderhalten. In der Vorlage war
+   *  der Text aus `opts.label` abgeleitet; das Kit formuliert nicht, also entscheidet das
+   *  der Consumer. */
   ariaUrl: string;
+  /** `aria-label` des leeren Add-Felds am Listenende. Dieselbe Pflicht wie `ariaUrl`:
+   *  je Liste unterschiedlich, wenn mehrere Listen auf einem Tab stehen. */
   ariaAdd: string;
   ariaApiKey(url: string): string;
   ariaModel(url: string): string;
+  /** Beschriftung der Leer-Option des Modell-Dropdowns („nimm das globale Modell").
+   *  `globalModel` kann LEER sein — ist global kein Modell gesetzt, steht sonst
+   *  „globales Modell ()" in der Oberfläche. Die Vorlage hatte dafür einen Fallback
+   *  (`globalModel() || "nicht gesetzt"`); der gehört jetzt dem Consumer, weil der
+   *  Ersatztext ein Satz in seiner Sprache ist. */
   emptyModelLabel(globalModel: string): string;
   modelHint(key: ModelHintKey): string;
   savedSuffix: string;

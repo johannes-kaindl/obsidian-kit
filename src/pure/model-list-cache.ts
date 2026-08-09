@@ -18,8 +18,20 @@ export interface ModelListClient {
 }
 
 export interface ModelListCache {
+  /** Liste zu `key`, aus dem Cache oder frisch geholt.
+   *
+   *  Der Schlüssel muss ALLES einschließen, was das Ergebnis beeinflusst — sonst bekommt ein
+   *  anderer Endpunkt die Liste des ersten. In der Endpunkt-Zeile ist er die normalisierte URL
+   *  (`normalizeEndpoint(cfg.url)`); ändert sich daran etwas, das die Antwort verändert, ohne
+   *  den Schlüssel zu ändern (dort: der API-Schlüssel der Zeile), muss der Aufrufer selbst
+   *  `invalidate(key)` rufen. */
   load(key: string, client: ModelListClient | undefined): Promise<ModelListResult>;
   invalidate(key: string): void;
+  /** Verwirft ALLE Listen. **Beim Schließen des Settings-Tabs rufen** (`hide()`) — der Cache
+   *  hält Promises und überlebt jeden Tab-Neuaufbau bewusst. Ohne diesen Aufruf bleibt ein
+   *  einmal als „nicht erreichbar" gemessener Endpunkt für die restliche Sitzung so stehen:
+   *  wer seinen LLM-Server startet und die Einstellungen erneut öffnet, sieht dauerhaft den
+   *  alten Zustand. Die Pflicht liegt beim Consumer — dieses Modul kennt keinen Tab. */
   clear(): void;
   bump(): number;
   generation(): number;

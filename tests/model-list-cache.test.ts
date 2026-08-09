@@ -60,6 +60,20 @@ describe("createModelListCache", () => {
     expect(good.listModels).toHaveBeenCalledTimes(1);
   });
 
+  // Vertrag: der Consumer ruft clear() beim Schliessen des Settings-Tabs (vault-rags hide()
+  // tut das). Ohne den Aufruf bleibt „nicht erreichbar" fuer die Sitzung stehen — der Cache
+  // haelt Promises und ueberlebt jeden Tab-Neuaufbau.
+  it("verwirft mit clear() ALLE Listen und fragt danach erneut", async () => {
+    const cache = createModelListCache();
+    const a = client(["a"]);
+    const b = client(["b"]);
+    await Promise.all([cache.load("a", a), cache.load("b", b)]);
+    cache.clear();
+    await Promise.all([cache.load("a", a), cache.load("b", b)]);
+    expect(a.listModels).toHaveBeenCalledTimes(2);
+    expect(b.listModels).toHaveBeenCalledTimes(2);
+  });
+
   it("zaehlt Generationen hoch", () => {
     const cache = createModelListCache();
     expect(cache.generation()).toBe(0);
