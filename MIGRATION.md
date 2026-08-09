@@ -64,6 +64,15 @@ Jeder bestehende `import { t } from "./i18n"` bleibt **unverändert** funktionsf
   4. An **allen** Call-Sites den expliziten `lang`-Parameter entfernen.
 - **obsidian-letterhead:** hat **kein `src/`** (nur gebündelte `main.js`) → keine Code-Migration; nur als Referenz, dass `t(key)` additiv-kompatibel zu `t(key, ...args)` wäre.
 
+## 0.26.0 — Endpunkt-Zeilen-Editor, Modell-Picker, Modell-Cache
+
+Additiv, **keine Breaking Changes**.
+
+- **`buildEndpointList` (`obsidian-kit/obsidian`):** Consumer, die den Endpunkt-Fallback-Block bisher selbst hielten (**vault-rag**, **koda-agent**), ersetzen ihre lokale Implementierung durch `buildEndpointList`. Das `strings`-Objekt (`EndpointListStrings`) ist **Pflicht** — das Kit formuliert keinen einzigen Anzeigetext selbst, jede Übersetzung bleibt beim Consumer, auch der Tooltip-Text der Presets und die Rollen-/Warnungstexte. `ENDPOINT_LIST_CSS` (Präfix `okit-`) **muss** in die `styles.css` des Consumers übernommen werden — ohne das Snippet fehlen Status-Icon, Rollenzeile und Preset-Layout.
+- **`resolveModelChoice` (`obsidian-kit/pure`) + `renderModelPicker` (`obsidian-kit/obsidian`):** ersetzen die lokale Modell-Feld-Logik eines Endpunkt-/Modell-Settings. Auch hier kommt der Hinweistext nur als `hintKey` zurück, nie als Satz — der Consumer übersetzt ihn über sein eigenes `t()`.
+- **`createModelListCache` (`obsidian-kit/pure`):** ersetzt die lokale Cache-Map für Modell-Listen je Endpunkt. Instanz statt Singleton — eine pro Settings-Tab-Lebensdauer anlegen, nicht modulweit teilen.
+- **`allowEmpty` in `resolveModelChoice`:** optional, Default `false`, rein additiv — bestehende Aufrufer sind ohne Änderung weiter kompatibel. Wird gebraucht, wenn ein Modell-Feld den leeren Wert bedeutungstragend nutzt (Modell-Override je Endpunkt-Zeile: „leer" = „nimm das globale Modell"). Ohne `allowEmpty: true` fehlt die Leer-Option im Dropdown, sobald schon ein Wert gewählt ist — ein einmal gesetztes Override lässt sich dann über die Oberfläche nicht mehr zurücknehmen.
+
 ## Test-Mock (`tests/__mocks__/obsidian.ts`)
 
 Das plugin-lokale Mock zur dünnen Re-Export-Datei machen:

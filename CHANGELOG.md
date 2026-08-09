@@ -2,6 +2,22 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.26.0 — Endpunkt-Zeilen-Editor, Modell-Picker, Modell-Cache
+
+Kompletter Umzug des Endpunkt-Zeilen-Editors aus `vault-rag` ins Kit, in vier Tasks (Spec/Plan unter `.superpowers/sdd/2026-08-08-kit-endpunkt-liste/`). Additiv, keine Breaking Changes.
+
+### `obsidian-kit/pure`
+- **`model-choice`** (neu) — `resolveModelChoice(input) → ModelChoice`: entscheidet, was ein Modell-Feld zeigen soll (Dropdown mit Liste / Freitext, wenn der Endpunkt keine Liste herausgibt / gesperrt, wenn er schweigt). Liefert i18n-**Schlüssel** (`hintKey`) und `suffix: "saved"` statt fertiger Sätze zurück — das Kit formuliert nicht.
+- **`allowEmpty`** (neu, optional, Default `false`) in `resolveModelChoice` — additive API-Erweiterung für Felder, in denen der leere Wert bedeutungstragend ist (Modell-Override je Endpunkt-Zeile: „leer" = „nimm das globale Modell"). Ohne die Option fehlte die Leer-Option im Dropdown, sobald schon ein Wert gewählt war — ein einmal gesetztes Override ließ sich über die Oberfläche nicht mehr zurücknehmen (Einbahnstraße, gemeldet 2026-08-08 während der Extraktion). Bestehende Aufrufer bleiben ohne Änderung kompatibel.
+- **`model-list-cache`** (neu) — `createModelListCache() → ModelListCache`: Modell-Listen je Endpunkt, ein Request pro Schlüssel (das Promise wird gecacht, nicht das Ergebnis), Probe nur bei leerer Liste, Generationszähler gegen verspätete Antworten. Instanz statt Singleton — gehört zur Lebensdauer eines Settings-Tabs.
+
+### `obsidian-kit/obsidian`
+- **`model-picker`** (neu) — `renderModelPicker(opts) → void`: zeichnet eine `ModelChoice` in eine bestehende `Setting`-Zeile, inklusive „Modelle abrufen"-Knopf in jedem Modus.
+- **`endpoint-list`** (neu) — `buildEndpointList(opts) → void`: der komplette Endpunkt-Zeilen-Editor (URL · Schlüssel · Modell-Override je Zeile, Adder-Zeile, Status-Icon, Rollenzeile, Drittanbieter-Hinweis, „zuerst verwenden", Entfernen, Preset-Knöpfe, „Verbindung prüfen"). Alle Texte kommen über `opts.strings` — das Kit formuliert nicht. Dazu die exportierte Konstante `ENDPOINT_LIST_CSS` (Präfix `okit-`), die der Consumer in seine `styles.css` übernimmt.
+
+### `obsidian-kit/testing`
+- Mock ergänzt: freie `setTooltip`-Funktion, `Setting.controlEl`, `querySelectorAll` am Fake-Element — Voraussetzung, um `buildEndpointList` gegen den Mock zu testen.
+
 ## 0.25.1 — pure/capabilities: Gemma-Erkennung + null-sicheres findModel
 
 - **Vision-Heuristik erkennt Gemma in beiden Schreibweisen und Gemma 4.** Der bisherige Ausdruck
