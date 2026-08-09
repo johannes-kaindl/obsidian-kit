@@ -71,6 +71,37 @@ describe("renderModelPicker", () => {
     }
   });
 
+  // `hintAs: "tooltip"` ist der Pfad, den die Endpunkt-Liste nimmt — und damit der EINZIGE
+  // Weg, auf dem der Hinweis („Endpunkt nicht erreichbar …") den Nutzer erreicht: das <select>
+  // kann im Modus locked keinen Tooltip tragen (deaktivierte Controls bekommen in Chromium
+  // keine Pointer-Events), der Refresh-Knopf ist nie deaktiviert.
+  it("komponiert den Hinweis bei hintAs tooltip in den Tooltip des Refresh-Knopfs", () => {
+    const withHint = base();
+    renderModelPicker({
+      setting: withHint.setting as never, choice: { ...dropdown, mode: "locked" },
+      ariaLabel: "Modell", placeholder: "Modell",
+      hint: "Endpunkt nicht erreichbar", hintAs: "tooltip",
+      savedSuffix: "(gespeichert)", refreshTooltip: "Modelle abrufen",
+      onPick: withHint.onPick, onRefresh: withHint.onRefresh,
+    });
+    const button = componentsOf(withHint.setting)
+      .find(c => c instanceof ExtraButtonComponent) as ExtraButtonComponent;
+    expect(button.tooltip).toBe("Endpunkt nicht erreichbar · Modelle abrufen");
+    // Der Hinweis landet NICHT zusaetzlich in der Beschreibung der Zeile (das ist der
+    // "desc"-Pfad, den die Endpunkt-Liste bewusst nicht nutzt — ihre Zeilen tragen keinen Text).
+    expect(withHint.setting.descValue).toBe("");
+
+    const noHint = base();
+    renderModelPicker({
+      setting: noHint.setting as never, choice: dropdown, ariaLabel: "Modell", placeholder: "Modell",
+      hint: "", hintAs: "tooltip", savedSuffix: "(gespeichert)", refreshTooltip: "Modelle abrufen",
+      onPick: noHint.onPick, onRefresh: noHint.onRefresh,
+    });
+    const plain = componentsOf(noHint.setting)
+      .find(c => c instanceof ExtraButtonComponent) as ExtraButtonComponent;
+    expect(plain.tooltip).toBe("Modelle abrufen");
+  });
+
   it("meldet die Auswahl im Modus dropdown zurueck, im Modus locked nicht", () => {
     const { setting, onPick, onRefresh } = base();
     renderModelPicker({

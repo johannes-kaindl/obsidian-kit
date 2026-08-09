@@ -5,7 +5,7 @@ import {
 import { buildEndpointList } from "../src/obsidian/endpoint-list";
 import type { EndpointListOptions, EndpointListStrings } from "../src/obsidian/endpoint-list";
 import { createModelListCache } from "../src/pure/model-list-cache";
-import type { EndpointConfig } from "../src/pure/endpoint_config";
+import type { EndpointConfig, EndpointRole } from "../src/pure/endpoint_config";
 import type { EndpointStatus } from "../src/pure/endpoint_diagnostics";
 
 const OK: EndpointStatus = { reachable: true, kind: "ok", klartext: "ok" };
@@ -31,9 +31,12 @@ interface FakeEl {
   children: FakeEl[];
   className: string;
   __setting?: Setting;
+  disabled?: boolean;
+  textContent: string;
   getAttribute(k: string): string | null;
   hasClass(c: string): boolean;
   dispatchEvent(evt: { type: string }): boolean;
+  querySelectorAll(selector: string): FakeEl[];
 }
 
 function harness(eps: EndpointConfig[], overrides: Partial<EndpointListOptions> = {}): {
@@ -86,6 +89,17 @@ function extraButtonsOf(setting: Setting): ExtraButtonComponent[] {
   return setting.components.filter(
     (c: unknown): c is ExtraButtonComponent => c instanceof ExtraButtonComponent,
   );
+}
+
+/** Zusatz-DOM einer Zeile: das Kit zeichnet es nicht als Komponente, sondern direkt in
+ *  `controlEl` (Status-Icon, Rollenzeile, Drittanbieter-Hinweis). */
+function inRow(setting: Setting, selector: string): FakeEl[] {
+  return (setting.controlEl as FakeEl).querySelectorAll(selector);
+}
+
+/** Text der Rollenzeile („aktiv" / „erreichbar, aber Platz N" / …). */
+function roleTextOf(setting: Setting): string | undefined {
+  return inRow(setting, ".okit-ep-state")[0]?.textContent;
 }
 
 /** Laesst die angestossenen Promise-Ketten (Probe, Modell-Liste, save→reconnect→rerender)
@@ -200,6 +214,87 @@ describe("buildEndpointList", () => {
     dd?.onChangeCB?.("");
     expect(h.current()).toEqual([{ url: "http://a" }]);
     await flush();
+  });
+
+  // `modelFits` ist der einzige Zweig, den nur der Consumer fuellt (Embedding-Listen: passt das
+  // Override-Modell zum geladenen Index?). Bisher war er ausschliesslich ueber `undefined`
+  // belegt — also nie mit einem echten Rueckruf. Genau dort aendert ein Umzug am ehesten still
+  // etwas, weil ein vergessener Durchstich sich als „immer true" tarnt.
+  it("reicht modelFits an die Rollenbestimmung durch", async () => {
+    for (const [fits, expected] of [[false, "skipped-model"], [true, "standby"]] as const) {
+      const h = harness([{ url: "http://a", model: "m1" }], {
+        // Rolle als Klartext ist Consumer-Sache; hier reicht der Diskriminator.
+        strings: { ...strings(), role: (r: EndpointRole) => r.kind },
+        active: () => null,          // erreichbar, aber NICHT der aktive Endpunkt
+        modelFits: () => fits,
+      });
+      buildEndpointList(h.opts);
+      await flush();
+      expect(roleTextOf(rowsOf(h.containerEl)[1])).toBe(expected);
+    }
+  });
+
+  // Der apiKey-Commit ist die einzige Stelle, die DOM ohne Re-Render umschaltet — der Nutzer
+  // steht sonst genau in dem Moment ohne Hinweis da, in dem er den Schluessel eintraegt.
+  it("schaltet den Drittanbieter-Hinweis beim Schluessel-Commit sofort um, ohne Re-Render", async () => {
+    const h = harness([{ url: "http://a" }]);
+    buildEndpointList(h.opts);
+    const entry = rowsOf(h.containerEl)[1];
+    const key = textsOf(entry)[1];
+    expect(inRow(entry, ".okit-ep-thirdparty").length).toBe(0);
+
+    key.setValue("sk-geheim");
+    (key.inputEl as FakeEl).dispatchEvent({ type: "blur" });
+    // Sofort, nicht erst nach der save→reconnect-Kette — und genau einmal.
+    expect(inRow(entry, ".okit-ep-thirdparty").length).toBe(1);
+    await flush();
+    expect(inRow(entry, ".okit-ep-thirdparty").length).toBe(1);
+    expect(h.rerender).not.toHaveBeenCalled();   // Schluessel aendert die Listen-FORM nicht
+
+    key.setValue("");
+    (key.inputEl as FakeEl).dispatchEvent({ type: "blur" });
+    expect(inRow(entry, ".okit-ep-thirdparty").length).toBe(0);
+    await flush();
+    expect(h.rerender).not.toHaveBeenCalled();
+  });
+
+  // Die Sperre war bisher nur ueber `aria-busy`/`okit-ep-busy` belegt; dass sie die FELDER
+  // erreicht, war unbelegt (der Mock gab allen Knoten tagName DIV, der Selektor lief ins Leere).
+  it("setzt die Eingabefelder bei einer Listen-Mutation wirklich auf disabled", async () => {
+    const h = harness([{ url: "http://a" }, { url: "http://b" }]);
+    buildEndpointList(h.opts);
+
+    const fields = h.containerEl.querySelectorAll("input, button, select");
+    expect(fields.length).toBeGreaterThan(0);
+    expect(fields.some(el => el.disabled === true)).toBe(false);
+
+    extraButtonsOf(rowsOf(h.containerEl)[2])[1].clickCB?.();   // Muelleimer der zweiten Zeile
+    expect(fields.every(el => el.disabled === true)).toBe(true);
+    await flush();
+  });
+
+  // Generationszaehler in lockRows(): eine verspaetete Modell-Liste darf nicht mehr in eine
+  // Zeile gezeichnet werden, deren Index die Mutation inzwischen stale gemacht hat.
+  it("zeichnet eine verspaetete Modell-Liste nicht mehr in eine tote Zeile", async () => {
+    let deliver: (models: string[]) => void = () => {};
+    const pending = new Promise<string[]>(resolve => { deliver = resolve; });
+    const h = harness([{ url: "http://a" }, { url: "http://b" }], {
+      clientFor: () => ({ listModels: () => pending, probe: () => Promise.resolve(OK) }),
+    });
+    buildEndpointList(h.opts);
+
+    const second = rowsOf(h.containerEl)[2];
+    extraButtonsOf(second)[1].clickCB?.();   // Muelleimer → lockRows() → cache.bump()
+    deliver(["m1"]);
+    await flush();
+
+    expect(second.components.some((c: unknown) => c instanceof DropdownComponent)).toBe(false);
+    // Gegenprobe ohne Mutation: dieselbe Kette zeichnet das Dropdown sehr wohl.
+    const quiet = harness([{ url: "http://a" }]);
+    buildEndpointList(quiet.opts);
+    await flush();
+    expect(rowsOf(quiet.containerEl)[1].components.some(
+      (c: unknown) => c instanceof DropdownComponent)).toBe(true);
   });
 
   it("laesst die UI nach einem gescheiterten Speichern nicht verriegelt zurueck", async () => {
