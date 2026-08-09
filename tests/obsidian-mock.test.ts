@@ -106,3 +106,69 @@ describe("Mock-Erweiterung für die Endpunkt-Liste (controlEl + querySelectorAll
     expect(root.querySelectorAll("")).toEqual([]);
   });
 });
+
+describe("Mock-Ehrlichkeit: Tag-Namen, Tooltips, remove()", () => {
+  it("Komponenten-Elemente tragen ihren echten Tag-Namen", () => {
+    const s = new Setting(makeFakeEl());
+    s.addText((t) => t.setValue("a"));
+    s.addTextArea((t) => t.setValue("b"));
+    s.addDropdown((d) => d.addOption("x", "x"));
+    s.addSlider((sl) => sl.setValue(1));
+    s.addButton((b) => b.setButtonText("go"));
+    s.addExtraButton((b) => b.setIcon("trash-2"));
+    expect(s.components.map((c: { inputEl?: { tagName: string }; selectEl?: { tagName: string };
+      sliderEl?: { tagName: string }; buttonEl?: { tagName: string };
+      extraSettingsEl?: { tagName: string } }) =>
+      (c.inputEl ?? c.selectEl ?? c.sliderEl ?? c.buttonEl ?? c.extraSettingsEl)?.tagName,
+    )).toEqual(["INPUT", "TEXTAREA", "SELECT", "INPUT", "BUTTON", "DIV"]);
+  });
+
+  it("querySelectorAll findet die add*-Komponenten einer Setting-Zeile", () => {
+    const root = makeFakeEl();
+    const s = new Setting(root);
+    s.addText((t) => t.setValue("a"));
+    s.addDropdown((d) => d.addOption("x", "x"));
+    s.addButton((b) => b.setButtonText("go"));
+    // Genau der Selektor, mit dem die Endpunkt-Liste ihre Zeilen sperrt.
+    const found = root.querySelectorAll("input, button, select");
+    expect(found.length).toBe(3);
+    found.forEach((el: { disabled?: boolean }) => { el.disabled = true; });
+    expect(s.components.map((c: { inputEl?: { disabled?: boolean }; selectEl?: { disabled?: boolean };
+      buttonEl?: { disabled?: boolean } }) =>
+      (c.inputEl ?? c.selectEl ?? c.buttonEl)?.disabled,
+    )).toEqual([true, true, true]);
+  });
+
+  it("Button-/ExtraButton-Tooltip und ExtraButton-Icon werden aufgezeichnet", () => {
+    const s = new Setting(makeFakeEl());
+    s.addButton((b) => b.setButtonText("go").setTooltip("Knopf-Hinweis"));
+    s.addExtraButton((b) => b.setIcon("refresh-cw").setTooltip("Modelle abrufen"));
+    expect(s.components[0].tooltip).toBe("Knopf-Hinweis");
+    expect(s.components[1].iconName).toBe("refresh-cw");
+    expect(s.components[1].tooltip).toBe("Modelle abrufen");
+  });
+
+  it("remove() haengt den Knoten beim Elternknoten aus", () => {
+    const root = makeFakeEl();
+    const a = root.createSpan({ cls: "a" });
+    const b = root.createSpan({ cls: "b" });
+    expect(a.parentElement).toBe(root);
+    a.remove();
+    expect(root.children).toEqual([b]);
+    expect(a.parentElement).toBeNull();
+    // Zweites remove() ist folgenlos, nicht fatal.
+    a.remove();
+    expect(root.children).toEqual([b]);
+  });
+
+  it("appendChild haengt an, verschiebt aber NICHT (dokumentierte Abweichung vom echten DOM)", () => {
+    const from = makeFakeEl();
+    const to = makeFakeEl();
+    const node = from.createSpan();
+    to.appendChild(node);
+    // Im echten DOM waere `from` jetzt leer. Deshalb ist eine Test-Aussage ueber die
+    // Reihenfolge der Kinder nur dort belastbar, wo nichts umgehaengt wurde.
+    expect(from.children).toEqual([node]);
+    expect(to.children).toEqual([node]);
+  });
+});

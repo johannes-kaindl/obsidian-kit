@@ -52,11 +52,17 @@ function matchesSimpleSelector(node: any, selector: string): boolean {
   return String(node?.tagName ?? "").toLowerCase() === s.toLowerCase();
 }
 
-export function makeFakeEl(): any {
+/** `tagName` ist ein Parameter, weil die Komponenten-Konstruktoren unten echte Tags brauchen:
+ *  `Setting.addText` liefert im echten Obsidian ein `<input>`, `addDropdown` ein `<select>`,
+ *  `addButton` ein `<button>`. Ein pauschales `DIV` machte jedes
+ *  `querySelectorAll("input, button, select")` blind — die Endpunkt-Liste sperrt ihre Zeilen
+ *  genau so. */
+export function makeFakeEl(tagName = "DIV"): any {
   const children: any[] = [];
   const attrs: Record<string, string> = {};
   const listeners: Record<string, Array<(...args: any[]) => void>> = {};
   let ownText = "";
+  let parent: any = null;
 
   const style: Record<string, any> = {
     setProperty(prop: string, value: string) { style[prop] = value; },
@@ -69,6 +75,7 @@ export function makeFakeEl(): any {
     if (o?.cls) c.className = Array.isArray(o.cls) ? o.cls.join(" ") : String(o.cls);
     if (o?.text != null) c.textContent = String(o.text);
     if (o?.attr) for (const k of Object.keys(o.attr)) c.setAttribute(k, String(o.attr[k]));
+    c.parentElement = el;
     children.push(c);
     return c;
   };
@@ -78,20 +85,32 @@ export function makeFakeEl(): any {
     style,
     dataset: {} as Record<string, string>,
     className: "",
-    tagName: "DIV",
+    tagName: String(tagName ?? "DIV").toUpperCase(),
     _listeners: listeners,
 
     empty() { children.length = 0; ownText = ""; },
     detach() {},
-    remove() {},
+    /** Hängt sich beim Elternknoten aus, wie im echten DOM. Nötig für Kit-Module, die
+     *  Zusatz-DOM in-place wieder wegnehmen (Drittanbieter-Icon der Endpunkt-Liste). */
+    remove() { parent?.removeChild?.(el); },
     focus() {},
     blur() {},
 
     createEl: (tag: string, o?: any) => makeChild(tag, o),
     createDiv: (o?: any) => makeChild("div", o),
     createSpan: (o?: any) => makeChild("span", o),
-    appendChild: (c: any) => { children.push(c); return c; },
-    removeChild: (c: any) => { const i = children.indexOf(c); if (i >= 0) children.splice(i, 1); return c; },
+    /** ANHÄNGEN, nicht verschieben: anders als im echten DOM bleibt ein bereits woanders
+     *  hängender Knoten zusätzlich bei seinem alten Elternknoten stehen. Bewusst nicht
+     *  repariert — Kit-Module hängen nur frische Knoten an. Folge für Tests: eine Aussage
+     *  über die Reihenfolge der Kinder ist nur dort belastbar, wo kein Knoten umgehängt
+     *  wurde (der Modell-Picker hängt seine Komponenten aus `controlEl` in den Slot um). */
+    appendChild: (c: any) => { if (c && typeof c === "object") c.parentElement = el; children.push(c); return c; },
+    removeChild: (c: any) => {
+      const i = children.indexOf(c);
+      if (i >= 0) children.splice(i, 1);
+      if (c && typeof c === "object" && c.parentElement === el) c.parentElement = null;
+      return c;
+    },
     replaceChildren: (...nodes: any[]) => { children.length = 0; children.push(...nodes); },
 
     setText: (t: string) => { ownText = String(t ?? ""); },
@@ -157,6 +176,15 @@ export function makeFakeEl(): any {
     },
     enumerable: false,
   });
+  // Nicht enumerierbar: ein Elternzeiger als normale Eigenschaft machte jeden Fake-Knoten
+  // zyklisch und damit in `toEqual`-Vergleichen unlesbar.
+  Object.defineProperty(el, "parentElement", {
+    get: () => parent,
+    set: (p: any) => { parent = p ?? null; },
+    enumerable: false,
+    configurable: true,
+  });
+  Object.defineProperty(el, "parentNode", { get: () => parent, enumerable: false, configurable: true });
   Object.defineProperty(el, "classes", {
     get: () => new Set(el.className.split(" ").filter(Boolean)),
     enumerable: false,
@@ -185,7 +213,7 @@ export function makeFakeEl(): any {
 // Chainable Setting components (node-safe; no real DOM).
 // ---------------------------------------------------------------------------
 export class TextComponent {
-  inputEl: any = makeFakeEl();
+  inputEl: any = makeFakeEl("INPUT");
   protected _value = "";
   onChangeCB: ((v: string) => any) | null = null;
   constructor() {
@@ -197,12 +225,14 @@ export class TextComponent {
   setDisabled(_d: boolean): this { return this; }
   onChange(cb: (v: string) => any): this { this.onChangeCB = cb; return this; }
 }
-export class TextAreaComponent extends TextComponent {}
+export class TextAreaComponent extends TextComponent {
+  constructor() { super(); this.inputEl.tagName = "TEXTAREA"; }
+}
 export class SearchComponent extends TextComponent {
-  clearButtonEl: any = makeFakeEl();
+  clearButtonEl: any = makeFakeEl();   // im echten Obsidian ein div.search-input-clear-button
 }
 export class ToggleComponent {
-  toggleEl: any = makeFakeEl();
+  toggleEl: any = makeFakeEl();        // im echten Obsidian ein div.checkbox-container
   protected _value = false;
   onChangeCB: ((v: boolean) => any) | null = null;
   constructor() {
@@ -215,7 +245,7 @@ export class ToggleComponent {
   onChange(cb: (v: boolean) => any): this { this.onChangeCB = cb; return this; }
 }
 export class DropdownComponent {
-  selectEl: any = makeFakeEl();
+  selectEl: any = makeFakeEl("SELECT");
   options: Record<string, string> = {};
   protected _value = "";
   onChangeCB: ((v: string) => any) | null = null;
@@ -230,7 +260,7 @@ export class DropdownComponent {
   onChange(cb: (v: string) => any): this { this.onChangeCB = cb; return this; }
 }
 export class SliderComponent {
-  sliderEl: any = makeFakeEl();
+  sliderEl: any = makeFakeEl("INPUT");   // im echten Obsidian ein input[type=range]
   protected _value = 0;
   limits: [number, number, number] = [0, 100, 1];
   onChangeCB: ((v: number) => any) | null = null;
@@ -245,9 +275,12 @@ export class SliderComponent {
   onChange(cb: (v: number) => any): this { this.onChangeCB = cb; return this; }
 }
 export class ButtonComponent {
-  buttonEl: any = makeFakeEl();
+  buttonEl: any = makeFakeEl("BUTTON");
   clickCB: (() => any) | null = null;
   textValue = "";
+  /** Zuletzt gesetzter Tooltip-Text — aufgezeichnet statt verworfen, damit Konsumenten
+   *  belegen können, WAS an einem Knopf hängt (der echte Obsidian schreibt ihn ins DOM). */
+  tooltip = "";
   ctaSet = false;
   warningSet = false;
   destructiveSet = false;
@@ -264,15 +297,20 @@ export class ButtonComponent {
   /** Erst ab Obsidian 1.13 vorhanden. Tests des <1.13-Fallbacks löschen die Methode am
    *  Prototyp (`delete ButtonComponent.prototype.setDestructive`) — s. tests/confirm.test.ts. */
   setDestructive(): this { this.destructiveSet = true; return this; }
-  setTooltip(_t: string): this { return this; }
+  setTooltip(t: string): this { this.tooltip = String(t ?? ""); return this; }
   setDisabled(_d: boolean): this { return this; }
   onClick(cb: () => any): this { this.clickCB = cb; return this; }
 }
 export class ExtraButtonComponent {
-  extraSettingsEl: any = makeFakeEl();
+  extraSettingsEl: any = makeFakeEl();   // im echten Obsidian ein div.clickable-icon (kennt kein `disabled`)
   clickCB: (() => any) | null = null;
-  setIcon(_i: string): this { return this; }
-  setTooltip(_t: string): this { return this; }
+  /** Icon- und Tooltip-Wert werden aufgezeichnet, nicht verworfen: an einem Icon-Knopf ist
+   *  der Tooltip der EINZIGE Text, und Kit-Module setzen dort Zusammensetzungen
+   *  („<Hinweis> · <Knopf>", s. renderModelPicker). Ohne Aufzeichnung ist das ungetestet. */
+  iconName = "";
+  tooltip = "";
+  setIcon(i: string): this { this.iconName = String(i ?? ""); return this; }
+  setTooltip(t: string): this { this.tooltip = String(t ?? ""); return this; }
   setDisabled(_d: boolean): this { return this; }
   onClick(cb: () => any): this { this.clickCB = cb; return this; }
 }
