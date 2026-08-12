@@ -2,13 +2,15 @@
 
 Geteilte, **drift-freie** Module, aus den Obsidian-Plugins von Johannes Kaindl extrahiert.
 
-Dieses Repo ist **kein Plugin**, sondern eine **Quell-Bibliothek**: Module, die in mehreren Plugins belegt-doppelt vorlagen (Regel-der-Drei, gegen den echten Code verifiziert), leben hier **einmal** — versioniert, getestet, dokumentiert. Jedes Plugin bindet das Kit per **git-Dependency auf einen Release-Tag** ein und **inlined** es mit seinem eigenen esbuild. So gibt es nur noch *eine* Quelle pro Modul statt N driftender Copy-Paste-Kopien.
+Dieses Repo ist **kein Plugin**, sondern eine **Quell-Bibliothek**: Module, die in mehreren Plugins belegt-doppelt vorlagen (Regel-der-Drei, gegen den echten Code verifiziert), leben hier **einmal** — versioniert, getestet, dokumentiert. Jedes Plugin trägt die Module als **vendorte, byte-identische Kopie** mit Herkunfts-Header in seinem eigenen `src/vendor/kit/`. So gibt es weiter nur *eine* Quelle pro Modul statt N driftender Copy-Paste-Kopien — aber keine Abhängigkeit, die ein Build ohne Netz auflösen müsste.
 
-> **Warum kein Monorepo / npm-Publish / Submodule?** Jedes Plugin behält sein eigenes Repo und seinen eigenen Release-Takt (PROF-OBS-09). Das Kit wird beim Build inlined → kein Runtime-Overhead, keine zweite Registry-Identität. Begründung + Evidenz: [`docs/superpowers/specs/2026-06-26-obsidian-kit-spec.md`](docs/superpowers/specs/2026-06-26-obsidian-kit-spec.md).
+> **Warum vendored — und nicht git-Dependency / npm-Publish / Monorepo / Submodule?** Jedes Plugin behält sein eigenes Repo und seinen eigenen Release-Takt (PROF-OBS-09). Eine git-Dependency braucht beim `npm install` Netz und liegt nicht als Artefakt im Repo — beides ein Risiko in der Community-Store-Review-Sandbox; npm-Publish wäre für einen rein internen Konsumentenkreis eine zweite Registry-Identität ohne Gegenwert.
+>
+> Verbindlich ist [`AGENTS.md`](AGENTS.md) § *Kit-Distribution & Release*. Historie: [`docs/superpowers/specs/2026-06-26-obsidian-kit-spec.md`](docs/superpowers/specs/2026-06-26-obsidian-kit-spec.md) (Extraktion, ursprünglich als git-Dep gedacht) und die Ablösung dieses Modells in `obsidian-plugins/docs/superpowers/specs/2026-07-04-i2m-vendoring-0.3.0-design.md`.
 
 ## Layering
 
-Drei Subpfade, über die `exports`-Map auf **rohe `.ts`** (kein Build-Schritt):
+Drei Quellbereiche in **rohem `.ts`** (kein Build-Schritt — das Kit hat kein Artefakt). Consumer vendoren aus ihnen in getrennte Zielordner (s. *Einbinden*):
 
 | Subpfad | Inhalt | Reinheit |
 |---|---|---|
@@ -18,30 +20,39 @@ Drei Subpfade, über die `exports`-Map auf **rohe `.ts`** (kein Build-Schritt):
 
 `dom-safe` und `http` sind **bewusst nicht** im Kit: sie sind keine echte Code-Duplikation, sondern geteilte **Regeln** (PROF-OBS-12/13). Siehe Spec §2.
 
-## Installation (in einem konsumierenden Plugin)
+## Einbinden (in einem konsumierenden Plugin)
 
-```jsonc
-// package.json des Plugins
-"dependencies": {
-  "obsidian-kit": "git+https://git.jkaindl.de/jkaindl/obsidian-kit.git#0.1.0"
-}
+**Kein Eintrag in `package.json`.** Die Module werden kopiert — byte-identisch, per Skript, nie von Hand. Jede Datei bekommt einen Herkunfts-Header in Zeile 1, jeder Vendor-Ordner eine `VENDOR.json` (Quelle, Version, Kit-SHA, Dateiliste, Re-Vendor-Kommando).
+
+```sh
+# im Plugin-Repo, Kit als Schwester-Verzeichnis ausgecheckt
+tools/sync-kit.sh
 ```
 
-Dann im Code:
+Zielordner nach Quellbereich — die Trennung ist nötig, nicht kosmetisch:
+
+| Zielordner | aus | warum getrennt |
+|---|---|---|
+| `src/vendor/kit/` | `src/pure/` | node-testbar, kein obsidian-Import |
+| `src/vendor/kit-obsidian/` | `src/obsidian/` | obsidian-gekoppelt — fällt unter andere Lint-Regeln |
+| `tests/vendor/kit/` | `src/testing/` | der Mock ist bewusst lose typisiert und bräche unter `src/` Lint **und** Typecheck |
+
+Dann im Code — Import auf die Datei, nicht auf ein Paket:
 
 ```ts
-import { ThinkSplitter, parseSSE, normalizeEndpoint, clampInt } from "obsidian-kit/pure";
-import { pickLang, setLang, t, defineStrings } from "obsidian-kit/pure";
+import { parseFrontmatter } from "../vendor/kit/frontmatter";
+import { defineStrings, pickLang, setLang, t } from "./vendor/kit/i18n";
+import { renderSettingDefinitions } from "../vendor/kit-obsidian/settings_walker";
 ```
 
-Für Tests (vitest-`resolve.alias` zeigt auf ein dünnes plugin-lokales `tests/__mocks__/obsidian.ts`, das das Kit-Mock re-exportiert):
+Für Tests zeigt der vitest-`resolve.alias` weiterhin auf ein dünnes plugin-lokales `tests/__mocks__/obsidian.ts` (Alias gehört in vitest, **nie** in die `tsconfig.json` — PROF-OBS-08), das den vendorten Mock re-exportiert:
 
 ```ts
 // tests/__mocks__/obsidian.ts (im Plugin)
-export * from "obsidian-kit/testing";
+export * from "../vendor/kit/obsidian-mock";
 ```
 
-`tsc --noEmit` (mit `moduleResolution: "Bundler"`) und esbuild lösen die `exports`-Map direkt auf die `.ts` auf — **kein** Kit-Build nötig.
+Die vendorten Stände sind **bewusst per Modul gestaffelt** — ein neuerer Kit-Tag ist *keine* Drift, re-vendored wird bei Bedarf. SSOT des Adoptions-Stands über alle Plugins: die generierte `../KIT-MATRIX.md` (Regeneration via `drift-audit`-Skill).
 
 ## Module
 
@@ -74,15 +85,16 @@ Jedes Modul trägt sein TSDoc am Source — bei der raw-`.ts`-Verteilung erschei
 
 ## Ein neues Plugin ans Kit onboarden
 
-1. git-Dependency auf den aktuellen Tag pinnen (siehe Installation).
-2. Lokale Kopie des Moduls löschen, Import auf `obsidian-kit/pure` umbiegen (Rezept je Modul in [`MIGRATION.md`](MIGRATION.md)).
+1. `tools/sync-kit.sh` aus einem Schwester-Repo übernehmen und auf die tatsächlich gebrauchten Module kürzen (siehe *Einbinden*).
+2. Lokale Kopie des Moduls löschen, Import auf den Vendor-Pfad umbiegen (Rezept je Modul in [`MIGRATION.md`](MIGRATION.md)).
 3. i18n: die lokale `i18n.ts` auf Delegation umbauen (Strings bleiben lokal, Engine kommt aus dem Kit — siehe `MIGRATION.md`).
-4. Test-Mock: `tests/__mocks__/obsidian.ts` → `export * from "obsidian-kit/testing";` (plugin-eigene Stubs via Override ergänzen).
+4. Test-Mock: `tests/__mocks__/obsidian.ts` → `export * from "../vendor/kit/obsidian-mock";` (plugin-eigene Stubs via Override ergänzen).
 5. `npm run lint && npm run typecheck && npm test` → grün, dann committen.
+6. `drift-audit`-Skill laufen lassen, damit `../KIT-MATRIX.md` das neue Repo kennt.
 
 ## Versionierung & Release
 
-- **SemVer ohne v-Präfix** (`0.1.0`). Konsumenten pinnen einen Tag; ein Kit-Bump wird pro Plugin bewusst nachgezogen (es gibt **keinen** geteilten Runtime — Versions-Skew ist kein Laufzeitproblem).
+- **SemVer ohne v-Präfix** (`0.1.0`), Release **tag-only** — kein Build-Artefakt, kein npm-Publish. Konsumenten vendoren einen Stand und ziehen einen Kit-Bump pro Plugin bewusst nach (es gibt **keinen** geteilten Runtime — Versions-Skew ist kein Laufzeitproblem, sondern der Normalzustand).
 - **Dual-Forge:** Tags werden im Lockstep nach **Forgejo (primär)** und **GitHub (Mirror)** gepusht (identische SHA). Fällt Forgejo aus, ist der GitHub-Mirror-Tag bit-identisch.
 - Release-Notes aus [`CHANGELOG.md`](CHANGELOG.md).
 
