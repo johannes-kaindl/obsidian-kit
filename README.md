@@ -2,6 +2,8 @@
 
 Geteilte, **drift-freie** Module, aus den Obsidian-Plugins von Johannes Kaindl extrahiert.
 
+## Was das ist
+
 Dieses Repo ist **kein Plugin**, sondern eine **Quell-Bibliothek**: Module, die in mehreren Plugins belegt-doppelt vorlagen (Regel-der-Drei, gegen den echten Code verifiziert), leben hier **einmal** — versioniert, getestet, dokumentiert. Jedes Plugin trägt die Module als **vendorte, byte-identische Kopie** mit Herkunfts-Header in seinem eigenen `src/vendor/kit/`. So gibt es weiter nur *eine* Quelle pro Modul statt N driftender Copy-Paste-Kopien — aber keine Abhängigkeit, die ein Build ohne Netz auflösen müsste.
 
 > **Warum vendored — und nicht git-Dependency / npm-Publish / Monorepo / Submodule?** Jedes Plugin behält sein eigenes Repo und seinen eigenen Release-Takt (PROF-OBS-09). Eine git-Dependency braucht beim `npm install` Netz und liegt nicht als Artefakt im Repo — beides ein Risiko in der Community-Store-Review-Sandbox; npm-Publish wäre für einen rein internen Konsumentenkreis eine zweite Registry-Identität ohne Gegenwert.
@@ -20,7 +22,9 @@ Drei Quellbereiche in **rohem `.ts`** (kein Build-Schritt — das Kit hat kein A
 
 `dom-safe` und `http` sind **bewusst nicht** im Kit: sie sind keine echte Code-Duplikation, sondern geteilte **Regeln** (PROF-OBS-12/13). Siehe Spec §2.
 
-## Einbinden (in einem konsumierenden Plugin)
+## Einbinden
+
+*In einem konsumierenden Plugin.*
 
 **Kein Eintrag in `package.json`.** Die Module werden kopiert — byte-identisch, per Skript, nie von Hand. Jede Datei bekommt einen Herkunfts-Header in Zeile 1, jeder Vendor-Ordner eine `VENDOR.json` (Quelle, Version, Kit-SHA, Dateiliste, Re-Vendor-Kommando).
 
