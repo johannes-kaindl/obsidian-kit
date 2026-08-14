@@ -2,6 +2,19 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.26.1 — pdf/code-blocks: Codeblock ging verloren, wenn ein Fence an Text klebt
+
+- **`extractCodeBlocks` polstert den Platzhalter jetzt mit Leerzeilen.** Ein Fenced Code darf in
+  CommonMark/Obsidian einen Absatz unterbrechen — steht er ohne Leerzeile direkt an einer
+  Textzeile, landete der Platzhalter per Soft Break im selben Absatz. Konsumenten lösen aber nur
+  einen **alleinstehenden** Platzhalter auf (`dom-to-ir` prüft `textContent` eines `<p>` gegen
+  `^<prefix>\d+$`), also fiel der Codeblock still aus der Ausgabe und der rohe Platzhaltertext
+  wurde stattdessen gedruckt. Betraf jeden Vendor-Stand seit der Extraktion.
+- Die Logik stammt aus `epub-exporter/src/core/code-blocks.ts`, wo sie beim Bau des EPUB-Pfads
+  entstand und dem Kit nie zufloss — gefunden beim Nachprüfen eines KIT-MATRIX-Altbefunds.
+  Zusätzliche Leerzeilen sind in Markdown wirkungslos; die bestehenden Fälle (Liste mit
+  eingerücktem Fence, mehrere Blöcke, Tilde-Fences) bleiben Byte-gleich.
+
 ## 0.26.0 — Endpunkt-Zeilen-Editor, Modell-Picker, Modell-Cache
 
 Kompletter Umzug des Endpunkt-Zeilen-Editors aus `vault-rag` ins Kit, in vier Tasks (Spec/Plan unter `.superpowers/sdd/2026-08-08-kit-endpunkt-liste/`). Additiv für `pure` und `obsidian`, keine Breaking Changes — `testing` hat **eine** strukturelle Änderung, die einen Test brechen kann (siehe unten).

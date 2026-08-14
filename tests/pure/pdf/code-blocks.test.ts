@@ -56,6 +56,24 @@ describe('extractCodeBlocks', () => {
     expect(r.markdown).toBe(md);
   });
 
+  // A fenced block may interrupt a paragraph in CommonMark/Obsidian. Without blank-line
+  // padding the placeholder ends up inside the neighbouring paragraph (soft break), and the
+  // consumer — which matches a *lone* placeholder paragraph — no longer recognises it: the
+  // code is dropped and the raw placeholder is printed instead.
+  it('pads the placeholder when a fence hugs the preceding text', () => {
+    const r = extractCodeBlocks('Text:\n```js\ncode\n```\n', 'TESTCODE');
+
+    expect(r.codes).toEqual([{ lang: 'js', text: 'code' }]);
+    expect(r.markdown).toBe(`Text:\n\n${codePlaceholder('TESTCODE', 0)}\n`);
+  });
+
+  it('pads the placeholder when text hugs the closing fence', () => {
+    const r = extractCodeBlocks('```js\ncode\n```\nDanach', 'TESTCODE');
+
+    expect(r.codes).toEqual([{ lang: 'js', text: 'code' }]);
+    expect(r.markdown).toBe(`${codePlaceholder('TESTCODE', 0)}\n\nDanach`);
+  });
+
   it('leaves an unclosed fence alone rather than swallowing the rest', () => {
     const md = 'Text\n\n```json\nnie geschlossen';
 

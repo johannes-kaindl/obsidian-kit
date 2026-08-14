@@ -39,7 +39,15 @@ export function extractCodeBlocks(md: string, prefix: string): { markdown: strin
 
     const body = lines.slice(i + 1, j).map((l) => (l.startsWith(indent) ? l.slice(indent.length) : l));
     codes.push({ lang: lang || undefined, text: body.join('\n') });
+    // A fenced block can interrupt a paragraph in CommonMark/Obsidian, so a placeholder hugging
+    // adjacent text renders as part of that paragraph (soft break) instead of a lone one — and
+    // consumers resolve only a lone placeholder, so the code would be dropped silently. Pad with
+    // blank lines on both sides (unless already blank) to force it into its own block; extra
+    // blank lines are harmless in Markdown. Logic taken from epub-exporter/src/core/code-blocks.ts.
+    if (out.length > 0 && out[out.length - 1] !== '') out.push('');
     out.push(indent + codePlaceholder(prefix, codes.length - 1));
+    const nextLine = lines[j + 1];
+    if (nextLine !== undefined && nextLine !== '') out.push('');
     i = j + 1;
   }
 
