@@ -43,6 +43,10 @@ export {
   type ModelListResult, type ModelListClient, type ModelListCache,
   createModelListCache,
 } from "./model-list-cache";
+export {
+  type DiffLine, type Hunk,
+  diffLines, groupHunks, applySelection,
+} from "./diff";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
 export const KIT_VERSION = "0.26.1";
