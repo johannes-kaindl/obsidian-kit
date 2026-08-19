@@ -11,3 +11,7 @@ export { renderModelPicker } from "./model-picker";
 export type { ModelPickerOptions } from "./model-picker";
 export { buildEndpointList, ENDPOINT_LIST_CSS } from "./endpoint-list";
 export type { EndpointListOptions, EndpointListStrings } from "./endpoint-list";
+export { copyToClipboard } from "./clipboard";
+export type { CopyToClipboardOptions } from "./clipboard";
+export { buildHubInto, HUB_CSS } from "./hub";
+export type { HubPanel, HubController, HubOptions } from "./hub";

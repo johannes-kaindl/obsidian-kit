@@ -2,6 +2,96 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.27.0 — Extraktions-Sweep: dreizehn Module aus der achten Drift-Audit-Runde
+
+Größter Zuwachs seit Bestehen des Kits. Alle dreizehn Module stammen aus Kandidaten, die die
+Extraktions-Schwelle erreicht hatten und in `../KIT-MATRIX.md` § 7 als offen geführt wurden.
+**Rein additiv — kein bestehender Export wurde geändert, keine Breaking Changes.**
+
+Der Schnitt jedes Moduls wurde vor der Festlegung gegen **jede heutige Aufrufstelle** der
+Quell-Repos geprüft; wo Fassungen sich widersprachen, wurde der Unterschied eine Option statt
+eines stillen Verlusts. Die Konsumenten sind bewusst **noch nicht** umgestellt (Vendoring folgt
+gegen diesen Tag, damit alle denselben Stand ziehen).
+
+### `obsidian-kit/pure`
+
+- **`diff`** (neu) — `diffLines` (LCS-Zeilendiff), `groupHunks`, `applySelection`. Verbatim aus
+  `image-to-markdown`; die Fassungen in koda-agent und wikijs-maintainer waren byte-identisch
+  (71 Zeilen, md5 `ae62db0c…`). ⚠️ Die Literale `"ctx" | "add" | "del"` sind load-bearing: alle
+  drei Konsumenten bauen daraus CSS-Klassennamen. Eine Umbenennung bricht das Styling **still**.
+- **`callout`** (neu) — `wrapCallout(title, body, type, fold?)`, `CalloutFold = boolean | "static"`.
+  Aus yijing-oracle (reichste Fassung), vault-rag und finance-ledger. **Neu gegenüber allen drei
+  Quellen:** ein `\n` in Titel oder Typ brach den Kopf bisher still (der Rest landete als nackter
+  Text neben dem Callout) — die Kopfzeile wird jetzt auf eine Zeile normalisiert. Regressionsfrei:
+  alle 15 heutigen Aufrufe bleiben byte-identisch.
+- **`sha256`** (neu) — Klasse `Sha256` (`update`/`digestHex`, 64-Bit-Längenzähler für Dateien
+  > 4 GB) plus die One-shot-Wrapper `sha256Hex`/`sha256HexUtf8`. Chunk-fähige Form aus
+  `local-image-generator`; finance-ledgers One-shot-Fassung wird ein Wrapper darum. Getestet
+  gegen NIST-Vektoren und `node:crypto`, inklusive des Längenüberlaufs bei 512 MB.
+- **`vault-path`** (neu) — `normalizeVaultDir`, `joinVaultPath`, `vaultDirname`. Aus paperize,
+  epub-exporter und apple-health (dort byte-identisch). ⚠️ `obsidian-letterhead`s Fassung strippt
+  nur **trailing** Slashes und wurde bewusst **nicht** übernommen: vier Belege weisen sie als
+  übersehenen Defekt aus, kein Test pinnt sie.
+- **`filename-template`** (neu) — `buildFilename(template, subs, opts?)`, `sanitizeFilename`,
+  `InvalidCharMode = "strip" | "replace"`. Aus yijing-oracle, paperize und letterhead; die
+  gegensätzliche Sanitize-Semantik (löschen vs. ersetzen) ist jetzt eine Option statt eines
+  Streitpunkts. **Schließt ein Prototype-Leck, das in yijing UND paperize live ist:** die
+  Substitutions-Map war ein Objekt-Literal, also war `subs["toString"]` nicht `undefined` und
+  `{toString}` im Template schrieb Funktionsquelltext in den Dateinamen.
+- **`error_body`** (neu) — `errorMessageFromBody(body, opts?)`, `errorMessageFromText`. Die
+  Fehlerkaskade `error.message` → `error` → `message` → `detail` aus fünf Fassungen. Die
+  `detail`-Quelle (FastAPI/OpenWebUI, Django REST) fehlte in 2 von 7 — genau der Fehler,
+  dessentwegen das zweite Exemplar überhaupt entstand. Leerwerte fallen jetzt durch (`""` ist
+  nicht nullish, der `?? rawBody`-Fallback der Aufrufer griff deshalb nicht) und Treffer werden
+  getrimmt.
+- **`run-state`** (neu) — `makeRunState(config)` mit generischem Phasen-Typ. Aus apple-health,
+  obsidian-transmute und audio-interface. Die zwei tragenden Regeln lagen an drei Orten in drei
+  verschiedenen Mechanismen: **ein Abbruch darf von einem Folgefehler nicht überschrieben werden**
+  (Abbrechen reißt den Stream ab und erzeugt fast immer einen Folgefehler) und **eine
+  Schreib-/Commit-Phase verweigert den Abbruch** (sonst verwaiste Datei bei gemeldeter Stornierung).
+- **`cooperative-yield`** (neu) — `createCooperativeYield(opts)`, `NowPort`. Das Zwei-Schranken-
+  Zeittor für CPU-lange Arbeit im Renderer: Fortschritt und Makrotask-Pause haben **getrennte**
+  Zeitschranken. Ohne die Pause ist ein Abbrechen-Knopf Dekoration — der Klick wird nie zugestellt.
+  ⚠️ In apple-health war die Synchronität der beiden Schranken real gebrochen.
+- **`clipboard`** (neu) — `writeClipboard(text, opts?) → Promise<boolean>`. Der `!clipboard`-Guard
+  steht **vor** jedem Zugriff aufs `clipboard`-Property: in non-secure Contexts wirft schon das
+  *Lesen* synchron, ein `try/catch` nur um `writeText()` fängt das strukturell nicht.
+- **`cache-download`** (neu) — `streamIntoCache(opts)`, `CacheLike`, `FetchLike`. Der
+  Pro-Datei-Streaming-Schritt aus local-image-generator und audio-interface: `body.tee()`, ein
+  Zweig streamt in die Cache API, der andere zählt Fortschritt; Retry auf Datei-Granularität.
+  Die Store-Klassen bleiben bewusst lokal — nur der gemeinsame Schritt ist gewandert.
+- **`settings_schema`** (neu) — `validateSettings(defaults, raw, schema)` plus Feldprüfer
+  (`oneOf`, `clampIntField`, `clampFloatField`, `nonEmptyString`, `arrayOf`, `arrayThen`).
+  **Bewusst NEBEN `mergeSettings`, nicht als dessen Option:** ein `validate`-Schalter müsste
+  zusätzlich die Weltform umlegen (offen → geschlossen), das wären zwei widersprüchliche
+  Ausgabeverträge unter einem Namen. `mergeSettings` bleibt unverändert Forward-Compat —
+  zwölf Konsumenten hängen daran (u. a. vault-crews' `lastRuns`).
+
+### `obsidian-kit/obsidian`
+
+- **`clipboard`** (neu) — `copyToClipboard(text, opts?)`: bindet `writeClipboard` an Obsidians
+  `Notice`. **Die Erfolgs-Notice lügt nicht mehr** — vier heutige Aufrufstellen zeigen sie
+  unbedingt (`void writeText(t); new Notice("kopiert")`), also auch bei Fehlschlag. Asymmetrische
+  Defaults mit Absicht: Erfolg hat keinen (drei Stellen quittieren am Knopf), Fehlschlag hat
+  `"Copy failed"`; `null` schaltet stumm.
+- **`hub`** (neu) — `buildHubInto(opts)`, `HubPanel`, `HubController` und die Konstante `HUB_CSS`
+  (Präfix `okit-hub-`, vom Consumer in die eigene `styles.css` zu übernehmen — das Kit injiziert
+  kein CSS). Tab-Leiste, die umbricht statt überzulaufen.
+  ⚠️ **`flex: 1` ist keine Kurzform von `flex: 1 1 auto`, sondern dessen Gegenteil:** `flex: 1`
+  heißt `1 1 0%`, die hypothetische Hauptgröße jedes Tabs ist damit 0 — alle passen immer in eine
+  Zeile und schrumpfen unter ihr Label. Ein `flex-wrap`-Container voller `flex: 1`-Items bricht
+  **nie** um. „Gleich breite Tabs" und „umbrechende Tabs" schließen sich aus; das Kit entscheidet
+  sich für Umbrechen. Anlass: derselbe Bug wurde am 2026-07-07 (vault-rag) und fünf Wochen später
+  am 2026-08-15 (vim-dojo) unabhängig gefunden — beim Nachbauen kamen nur 2 der 4 Zutaten mit.
+
+### Gates
+
+- `check:index-strict` deckt jetzt **zehn** der neuen Module mit ab (alle außer `diff`, dessen
+  LCS-Kern ungeguarded indiziert). Das ist keine Kosmetik: `local-image-generator` vendoriert
+  unter `noUncheckedIndexedAccess`, und ohne den Eintrag könnte eine spätere Aufräum-Änderung im
+  Kit den Typecheck **im Konsumenten** brechen.
+- 789 Tests (vorher 416).
+
 ## 0.26.1 — pdf/code-blocks: Codeblock ging verloren, wenn ein Fence an Text klebt
 
 - **`extractCodeBlocks` polstert den Platzhalter jetzt mit Leerzeilen.** Ein Fenced Code darf in

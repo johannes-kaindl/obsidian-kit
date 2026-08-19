@@ -1,6 +1,6 @@
 {
   "name": "obsidian-kit",
-  "version": "0.26.1",
+  "version": "0.27.0",
   "description": "Shared, drift-free modules extracted from Johannes Kaindl's Obsidian plugins",
   "type": "module",
   "license": "AGPL-3.0-or-later",
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "check:index-strict": "tsc --noEmit --strict --noUncheckedIndexedAccess --target ES2022 --module esnext --moduleResolution bundler src/pure/frontmatter.ts src/pure/endpoint.ts src/pure/endpoint_config.ts src/pure/i18n.ts src/pure/settings.ts src/pure/model-choice.ts src/pure/model-list-cache.ts",
+    "check:index-strict": "tsc --noEmit --strict --noUncheckedIndexedAccess --target ES2022 --module esnext --moduleResolution bundler src/pure/frontmatter.ts src/pure/endpoint.ts src/pure/endpoint_config.ts src/pure/i18n.ts src/pure/settings.ts src/pure/model-choice.ts src/pure/model-list-cache.ts src/pure/callout.ts src/pure/sha256.ts src/pure/vault-path.ts src/pure/filename-template.ts src/pure/error_body.ts src/pure/run-state.ts src/pure/cooperative-yield.ts src/pure/clipboard.ts src/pure/cache-download.ts src/pure/settings_schema.ts",
     "test": "node scripts/check-no-abs-paths.mjs && node scripts/check-no-nul-bytes.mjs && npm run check:index-strict && npm run lint && vitest run",
     "lint": "eslint src tests"
   },
