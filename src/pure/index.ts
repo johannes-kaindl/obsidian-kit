@@ -47,6 +47,33 @@ export {
   type DiffLine, type Hunk,
   diffLines, groupHunks, applySelection,
 } from "./diff";
+export { type CalloutFold, wrapCallout } from "./callout";
+export { Sha256, sha256Hex, sha256HexUtf8 } from "./sha256";
+export { normalizeVaultDir, joinVaultPath, vaultDirname } from "./vault-path";
+export {
+  type InvalidCharMode, type FilenameOptions,
+  sanitizeFilename, buildFilename,
+} from "./filename-template";
+export { type ErrorBodyOptions, errorMessageFromBody, errorMessageFromText } from "./error_body";
+export {
+  type RunState, type RunStateConfig, type RunStateOps,
+  makeRunState,
+} from "./run-state";
+export {
+  type NowPort, type CooperativeYieldOptions, type CooperativeYield,
+  createCooperativeYield,
+} from "./cooperative-yield";
+export { type CopyFailure, type ClipboardOptions, writeClipboard } from "./clipboard";
+export {
+  type CacheLike, type FetchLike, type CancellableTimer,
+  type StreamIntoCacheOptions, type StreamIntoCacheResult,
+  streamIntoCache,
+} from "./cache-download";
+export {
+  type FieldCheck, type SettingsSchema,
+  validateSettings, isPlainObject,
+  oneOf, check, clampIntField, clampFloatField, nonEmptyString, arrayOf, arrayThen,
+} from "./settings_schema";
 
 /** Diagnose-Konstante: erlaubt einem Plugin zu loggen, welche gepinnte Kit-Version es bündelt (Spec §6). */
 export const KIT_VERSION = "0.26.1";
