@@ -1,0 +1,8 @@
+{
+  "source": "code-kit",
+  "tag": "0.1.0",
+  "sha": "b62fb59613c07d5406b7ed3a4dc1f5f2bac9fd11",
+  "version": "0.1.0",
+  "vendored": "pure: model-choice, model-list-cache, endpoint, endpoint_config, endpoint_diagnostics; web: clipboard",
+  "note": "Verbatim copies of code-kit/src/ts. Never edit here — re-vendor from the pinned sha."
+}

@@ -8,14 +8,14 @@
  * Modell-Cache und Tab-Neuaufbau sind Callbacks statt Tab-Zustand, CSS-Präfix `okit-`. */
 import { Notice, Setting, setIcon, setTooltip } from "obsidian";
 import { renderModelPicker } from "./model-picker";
-import { resolveModelChoice } from "../pure/model-choice";
-import type { ModelHintKey } from "../pure/model-choice";
-import type { ModelListCache, ModelListClient } from "../pure/model-list-cache";
-import { normalizeEndpoint } from "../pure/endpoint";
-import { applyEndpointEdit, carriesApiKey, endpointRole, moveEndpointToFront } from "../pure/endpoint_config";
-import type { EndpointConfig, EndpointRole } from "../pure/endpoint_config";
-import { ENDPOINT_PRESETS, validateEndpointInput } from "../pure/endpoint_diagnostics";
-import type { EndpointPreset, EndpointStatus, EndpointWarning } from "../pure/endpoint_diagnostics";
+import { resolveModelChoice } from "../vendor/code-kit/pure/model-choice";
+import type { ModelHintKey } from "../vendor/code-kit/pure/model-choice";
+import type { ModelListCache, ModelListClient } from "../vendor/code-kit/pure/model-list-cache";
+import { normalizeEndpoint } from "../vendor/code-kit/pure/endpoint";
+import { applyEndpointEdit, carriesApiKey, endpointRole, moveEndpointToFront } from "../vendor/code-kit/pure/endpoint_config";
+import type { EndpointConfig, EndpointRole } from "../vendor/code-kit/pure/endpoint_config";
+import { ENDPOINT_PRESETS, validateEndpointInput } from "../vendor/code-kit/pure/endpoint_diagnostics";
+import type { EndpointPreset, EndpointStatus, EndpointWarning } from "../vendor/code-kit/pure/endpoint_diagnostics";
 
 /** Jeder benutzersichtbare Text dieser Komponente. Das Kit formuliert nichts selbst —
  *  Sprache, Tonfall und Übersetzung gehören dem Consumer. */

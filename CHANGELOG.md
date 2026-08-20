@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen am Kit. Format: SemVer ohne v-Präfix. Dies ist die **einzige** Quelle, aus der ein auf einen Tag gepinntes Plugin erfährt, was ein Bump bringt — jeder Tag bekommt einen Eintrag.
 
+## 0.28.0 — 23 domänenfreie Module ziehen nach code-kit 0.1.0
+
+23 domänenfreie Module nach code-kit 0.1.0 umgezogen (21 pure, 2 web); obsidian-kit vendoriert
+die 6 selbst benötigten zurück (`src/vendor/code-kit/`). Konsumenten migrieren lazy beim
+nächsten Re-Vendoring; bestehende Pins bleiben gültig.
+
 ## 0.27.0 — Extraktions-Sweep: dreizehn Module aus der achten Drift-Audit-Runde
 
 Größter Zuwachs seit Bestehen des Kits. Alle dreizehn Module stammen aus Kandidaten, die die

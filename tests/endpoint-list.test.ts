@@ -4,9 +4,9 @@ import {
 } from "../src/testing/obsidian-mock";
 import { buildEndpointList } from "../src/obsidian/endpoint-list";
 import type { EndpointListOptions, EndpointListStrings } from "../src/obsidian/endpoint-list";
-import { createModelListCache } from "../src/pure/model-list-cache";
-import type { EndpointConfig, EndpointRole } from "../src/pure/endpoint_config";
-import type { EndpointStatus } from "../src/pure/endpoint_diagnostics";
+import { createModelListCache } from "../src/vendor/code-kit/pure/model-list-cache";
+import type { EndpointConfig, EndpointRole } from "../src/vendor/code-kit/pure/endpoint_config";
+import type { EndpointStatus } from "../src/vendor/code-kit/pure/endpoint_diagnostics";
 
 const OK: EndpointStatus = { reachable: true, kind: "ok", klartext: "ok" };
 

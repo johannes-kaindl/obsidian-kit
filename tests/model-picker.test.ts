@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Setting, DropdownComponent, TextComponent, ExtraButtonComponent, makeFakeEl } from "../src/testing/obsidian-mock";
 import { renderModelPicker } from "../src/obsidian/model-picker";
-import type { ModelChoice } from "../src/pure/model-choice";
+import type { ModelChoice } from "../src/vendor/code-kit/pure/model-choice";
 
 // Der Brief-Entwurf ging von einer `setting.controlEl`-Eigenschaft aus, die der Kit-Mock
 // damals nicht kannte. Seit `f0a7e74` (Vorschritt zur Endpunkt-Liste) gibt es sie -- weitere

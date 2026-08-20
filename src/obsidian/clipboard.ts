@@ -45,8 +45,8 @@
  *     weil sie vor dem Callback ausgelöst wird. Die „wirft nie"-Zusage gilt dem Kopiervorgang,
  *     nicht fremdem Code — und auch `failedMessage` als Funktion ist fremder Code. */
 import { Notice } from "obsidian";
-import { writeClipboard } from "../pure/clipboard";
-import type { ClipboardOptions, CopyFailure } from "../pure/clipboard";
+import { writeClipboard } from "../vendor/code-kit/web/clipboard";
+import type { ClipboardOptions, CopyFailure } from "../vendor/code-kit/web/clipboard";
 
 /** Meldung, wenn nicht kopiert werden konnte — der Kit-Default, wenn `failedMessage` fehlt.
  *  Wortgleich mit beiden Vorlagen; `json_viewer` testet gegen `/copy failed/i`. */

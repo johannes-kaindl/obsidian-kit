@@ -4,7 +4,7 @@
  * Herkunft: vault-rag/src/settings.ts (renderModelPicker, 0.19.x). Abweichung zur Vorlage:
  * alle Texte kommen aus `opts`, das Kit formuliert nicht. */
 import { Setting } from "obsidian";
-import type { ModelChoice } from "../pure/model-choice";
+import type { ModelChoice } from "../vendor/code-kit/pure/model-choice";
 
 export interface ModelPickerOptions {
   setting: Setting;

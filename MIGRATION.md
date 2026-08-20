@@ -6,6 +6,47 @@ Voraussetzung: git-Dependency gepinnt (`"obsidian-kit": "git+https://git.jkaindl
 
 ---
 
+## 0.28.0 — 23 Module ziehen nach code-kit 0.1.0
+
+Diese Module sind aus `obsidian-kit/pure` verschwunden — sie leben jetzt in `code-kit`
+(Tag `0.1.0`). obsidian-kit selbst vendoriert die 6 davon, die es noch braucht, nach
+`src/vendor/code-kit/` zurück; ein Consumer, der eines dieser Module direkt aus
+`obsidian-kit/pure` bezog, muss beim nächsten Re-Vendoring stattdessen `code-kit` als
+Quelle pinnen. Bestehende obsidian-kit-Pins bleiben bis dahin gültig — nichts bricht
+ungefragt.
+
+| Modul | Neue Quelle in `code-kit` |
+|---|---|
+| `sse` (`parseSSE`) | `src/ts/pure/sse.ts` |
+| `endpoint` | `src/ts/pure/endpoint.ts` |
+| `endpoint_config` | `src/ts/pure/endpoint_config.ts` |
+| `endpoint_diagnostics` | `src/ts/pure/endpoint_diagnostics.ts` |
+| `model-choice` | `src/ts/pure/model-choice.ts` |
+| `model-list-cache` | `src/ts/pure/model-list-cache.ts` |
+| `model-context` | `src/ts/pure/model-context.ts` |
+| `reasoning` | `src/ts/pure/reasoning.ts` |
+| `capabilities` | `src/ts/pure/capabilities.ts` |
+| `think-splitter` (`ThinkSplitter`) | `src/ts/pure/think-splitter.ts` |
+| `timeout` | `src/ts/pure/timeout.ts` |
+| `error_body` | `src/ts/pure/error_body.ts` |
+| `sha256` | `src/ts/pure/sha256.ts` |
+| `num` (`clampInt`) | `src/ts/pure/num.ts` |
+| `diff` | `src/ts/pure/diff.ts` |
+| `run-state` | `src/ts/pure/run-state.ts` |
+| `cooperative-yield` | `src/ts/pure/cooperative-yield.ts` |
+| `i18n` | `src/ts/pure/i18n.ts` |
+| `filename-template` | `src/ts/pure/filename-template.ts` |
+| `settings` | `src/ts/pure/settings.ts` |
+| `settings_schema` | `src/ts/pure/settings_schema.ts` |
+| `clipboard` | `src/ts/web/clipboard.ts` |
+| `cache-download` | `src/ts/web/cache-download.ts` |
+
+Was **bleibt**: `frontmatter`, `pdf`, `callout`, `vault-path` — diese sind Obsidian-/Vault-Domäne
+und ziehen nicht um. `obsidian-kit`s eigene `src/obsidian/`-Schicht (Endpoint-Listen-Editor,
+Modell-Picker, Clipboard-Notice) importiert die 6 selbst benötigten Module ab sofort aus
+`src/vendor/code-kit/` statt aus `src/pure/` — ein Consumer, der diese `obsidian`-Layer-Exporte
+nutzt, sieht keine Änderung.
+
 ## `ThinkSplitter` (byte-identisch)
 
 1. `src/think_splitter.ts` **löschen**.
